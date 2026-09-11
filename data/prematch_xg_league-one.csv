@@ -1,0 +1,61 @@
+date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
+2026-08-15,Notts County,Leicester,1.057,1.523,2.58,True,0.257,0.272,0.471
+2026-08-15,Oxford,Milton Keynes Dons,1.413,1.072,2.486,True,0.44,0.28,0.28
+2026-08-15,Reading,Luton,1.17,1.545,2.714,True,0.279,0.271,0.45
+2026-08-15,Barnsley,Bromley,1.551,1.171,2.722,True,0.453,0.265,0.281
+2026-08-15,Blackpool,Wycombe,1.359,1.298,2.657,True,0.375,0.278,0.347
+2026-08-15,Bradford,Peterboro,1.811,0.959,2.77,True,0.566,0.241,0.193
+2026-08-15,Burton,Stevenage,1.267,1.032,2.299,True,0.412,0.289,0.299
+2026-08-15,Cambridge,Wigan,1.276,1.132,2.407,True,0.391,0.287,0.322
+2026-08-15,Huddersfield,AFC Wimbledon,1.91,0.97,2.88,True,0.582,0.244,0.174
+2026-08-15,Leyton Orient,Sheffield Weds,1.254,1.443,2.697,True,0.322,0.27,0.408
+2026-08-15,Mansfield,Doncaster,1.524,1.151,2.674,True,0.45,0.271,0.279
+2026-08-15,Plymouth,Stockport,1.641,1.275,2.916,True,0.449,0.263,0.288
+2026-08-20,Sheffield Weds,Bradford,1.365,1.273,2.638,True,0.382,0.278,0.34
+2026-08-22,Doncaster,Barnsley,1.678,1.211,2.889,True,0.472,0.264,0.264
+2026-08-22,Luton,Notts County,1.907,0.976,2.882,True,0.583,0.235,0.183
+2026-08-22,AFC Wimbledon,Reading,1.297,1.276,2.572,True,0.365,0.281,0.355
+2026-08-22,Bromley,Cambridge,1.257,1.285,2.542,True,0.346,0.295,0.359
+2026-08-22,Leicester,Burton,2.023,0.948,2.971,True,0.615,0.218,0.167
+2026-08-22,Milton Keynes Dons,Huddersfield,1.346,1.368,2.714,True,0.356,0.277,0.366
+2026-08-22,Peterboro,Mansfield,1.427,1.596,3.023,True,0.332,0.261,0.406
+2026-08-22,Stevenage,Oxford,1.327,1.171,2.498,True,0.394,0.286,0.321
+2026-08-22,Stockport,Blackpool,1.878,0.922,2.8,True,0.586,0.247,0.166
+2026-08-22,Wigan,Leyton Orient,1.375,1.075,2.45,True,0.425,0.294,0.281
+2026-08-22,Wycombe,Plymouth,1.441,1.348,2.788,True,0.382,0.278,0.34
+2026-08-29,Blackpool,Peterboro,1.888,1.141,3.028,True,0.538,0.242,0.219
+2026-08-29,Milton Keynes Dons,Leicester,1.367,1.479,2.846,True,0.34,0.27,0.39
+2026-08-29,Cambridge,Huddersfield,1.289,1.496,2.784,True,0.311,0.283,0.406
+2026-08-29,Leyton Orient,Barnsley,1.533,1.265,2.797,True,0.426,0.269,0.305
+2026-08-29,Notts County,Burton,1.429,1.185,2.614,True,0.42,0.272,0.308
+2026-08-29,Plymouth,Bradford,1.553,1.243,2.795,True,0.43,0.28,0.289
+2026-08-29,Sheffield Weds,Bromley,1.698,1.045,2.743,True,0.517,0.257,0.226
+2026-08-29,Stevenage,Doncaster,1.405,1.088,2.493,True,0.43,0.289,0.28
+2026-08-29,Stockport,Wycombe,1.674,1.094,2.769,True,0.498,0.265,0.237
+2026-08-30,AFC Wimbledon,Wigan,1.113,1.391,2.503,True,0.289,0.289,0.421
+2026-08-30,Mansfield,Luton,1.413,1.607,3.02,True,0.322,0.27,0.408
+2026-09-01,Bradford,Cambridge,1.666,0.947,2.614,True,0.531,0.267,0.202
+2026-09-01,Bromley,Leyton Orient,1.331,1.331,2.662,True,0.353,0.293,0.353
+2026-09-01,Doncaster,Notts County,1.471,1.205,2.676,True,0.426,0.269,0.305
+2026-09-01,Huddersfield,Oxford,1.848,1.04,2.889,True,0.554,0.242,0.204
+2026-09-01,Leicester,Plymouth,1.768,1.221,2.988,True,0.492,0.254,0.254
+2026-09-01,Peterboro,Stevenage,1.362,1.242,2.604,True,0.381,0.295,0.324
+2026-09-01,Wycombe,Sheffield Weds,1.444,1.483,2.927,True,0.354,0.275,0.371
+2026-09-02,Barnsley,Blackpool,1.601,1.305,2.906,True,0.435,0.261,0.304
+2026-09-02,Burton,AFC Wimbledon,1.531,0.994,2.525,True,0.484,0.285,0.231
+2026-09-02,Luton,Stockport,1.6,1.306,2.906,True,0.43,0.272,0.298
+2026-09-02,Wigan,Milton Keynes Dons,1.367,1.202,2.57,True,0.398,0.281,0.321
+2026-09-02,Reading,Mansfield,1.638,1.193,2.831,True,0.468,0.262,0.27
+2026-09-05,Peterboro,Sheffield Weds,1.408,1.735,3.143,True,0.297,0.263,0.439
+2026-09-05,Wigan,Stockport,1.301,1.55,2.851,True,0.308,0.272,0.42
+2026-09-05,Barnsley,Stevenage,1.497,1.112,2.608,True,0.45,0.279,0.271
+2026-09-05,Bradford,Mansfield,1.687,1.05,2.736,True,0.514,0.256,0.23
+2026-09-05,Burton,Cambridge,1.234,1.294,2.528,True,0.345,0.281,0.373
+2026-09-05,Doncaster,Plymouth,1.474,1.361,2.836,True,0.39,0.27,0.34
+2026-09-05,Huddersfield,Notts County,1.839,0.929,2.767,True,0.579,0.239,0.182
+2026-09-05,Leicester,Oxford,1.827,0.977,2.803,True,0.564,0.244,0.192
+2026-09-05,Luton,Leyton Orient,1.964,1.1,3.064,True,0.567,0.229,0.204
+2026-09-05,Reading,Blackpool,1.659,1.135,2.794,True,0.483,0.271,0.246
+2026-09-05,Wycombe,Milton Keynes Dons,1.504,1.321,2.825,True,0.407,0.269,0.324
+2026-09-07,Bromley,AFC Wimbledon,1.394,1.243,2.637,True,0.394,0.281,0.324
+2026-09-10,Stevenage,Luton,1.185,1.429,2.614,True,0.308,0.272,0.42

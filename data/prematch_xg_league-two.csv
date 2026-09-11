@@ -1,0 +1,61 @@
+date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
+2026-08-15,Newport County,Rochdale,1.199,1.386,2.584,True,0.322,0.27,0.408
+2026-08-15,Oldham,Port Vale,1.278,1.234,2.512,True,0.367,0.287,0.346
+2026-08-15,Accrington,Colchester,1.33,1.185,2.515,True,0.391,0.287,0.322
+2026-08-15,Barnet,Salford,1.418,1.177,2.595,True,0.412,0.289,0.299
+2026-08-15,Cheltenham,Rotherham,1.3,1.362,2.662,True,0.347,0.278,0.375
+2026-08-15,Chesterfield,Fleetwood Town,1.634,0.953,2.587,True,0.524,0.263,0.213
+2026-08-15,Crawley Town,Crewe,1.335,1.29,2.626,True,0.369,0.284,0.348
+2026-08-15,Gillingham,Walsall,1.433,1.146,2.579,True,0.43,0.272,0.298
+2026-08-15,Grimsby,Exeter,1.702,1.02,2.722,True,0.524,0.256,0.22
+2026-08-15,Northampton,Swindon,1.514,1.141,2.654,True,0.45,0.271,0.279
+2026-08-15,Tranmere,Shrewsbury,1.401,1.099,2.5,True,0.43,0.28,0.289
+2026-08-15,York,Bristol Rvs,1.412,1.095,2.506,True,0.43,0.289,0.28
+2026-08-22,Bristol Rvs,Newport County,1.829,0.94,2.769,True,0.57,0.255,0.175
+2026-08-22,Salford,Chesterfield,1.492,1.019,2.511,True,0.466,0.294,0.24
+2026-08-22,Walsall,Grimsby,1.207,1.31,2.517,True,0.333,0.286,0.381
+2026-08-22,Colchester,Oldham,1.384,1.304,2.688,True,0.383,0.27,0.347
+2026-08-22,Crewe,Northampton,1.463,1.134,2.597,True,0.44,0.272,0.289
+2026-08-22,Exeter,Accrington,1.58,1.062,2.642,True,0.483,0.271,0.246
+2026-08-22,Fleetwood Town,Gillingham,1.636,1.004,2.64,True,0.509,0.271,0.22
+2026-08-22,Port Vale,Tranmere,1.641,0.873,2.514,True,0.545,0.262,0.193
+2026-08-22,Rochdale,Crawley Town,1.645,1.07,2.715,True,0.493,0.278,0.229
+2026-08-22,Rotherham,York,1.37,1.296,2.666,True,0.374,0.286,0.339
+2026-08-22,Shrewsbury,Barnet,1.024,1.603,2.627,True,0.231,0.272,0.497
+2026-08-22,Swindon,Cheltenham,1.74,1.045,2.785,True,0.528,0.251,0.221
+2026-08-29,Barnet,Cheltenham,1.857,0.921,2.778,True,0.584,0.241,0.175
+2026-08-29,Port Vale,Crewe,1.493,1.186,2.679,True,0.43,0.28,0.289
+2026-08-29,Rotherham,Chesterfield,1.203,1.425,2.627,True,0.308,0.28,0.411
+2026-08-29,Colchester,Rochdale,1.428,1.188,2.616,True,0.417,0.278,0.306
+2026-08-29,Crawley Town,Bristol Rvs,1.135,1.519,2.653,True,0.27,0.282,0.448
+2026-08-29,Gillingham,Northampton,1.318,1.257,2.575,True,0.375,0.278,0.347
+2026-08-29,Grimsby,Fleetwood Town,1.608,0.983,2.59,True,0.511,0.264,0.225
+2026-08-29,Newport County,Tranmere,1.269,1.225,2.493,True,0.367,0.287,0.346
+2026-08-29,Oldham,Swindon,1.593,1.092,2.684,True,0.482,0.263,0.256
+2026-08-29,Shrewsbury,Salford,1.021,1.576,2.597,True,0.242,0.263,0.495
+2026-08-29,Walsall,Accrington,1.581,0.968,2.55,True,0.507,0.27,0.224
+2026-08-29,York,Exeter,1.804,0.958,2.762,True,0.564,0.244,0.192
+2026-09-01,Accrington,Grimsby,1.091,1.617,2.708,True,0.252,0.259,0.489
+2026-09-01,Bristol Rvs,Colchester,1.744,1.089,2.833,True,0.521,0.244,0.235
+2026-09-01,Cheltenham,York,1.102,1.701,2.803,True,0.241,0.254,0.505
+2026-09-01,Chesterfield,Gillingham,1.786,0.835,2.621,True,0.59,0.242,0.167
+2026-09-01,Crewe,Walsall,1.519,1.271,2.789,True,0.42,0.272,0.308
+2026-09-01,Exeter,Barnet,1.177,1.758,2.935,True,0.244,0.258,0.498
+2026-09-01,Fleetwood Town,Oldham,1.31,1.304,2.613,True,0.359,0.286,0.356
+2026-09-01,Northampton,Crawley Town,1.758,0.992,2.75,True,0.543,0.254,0.203
+2026-09-01,Rochdale,Shrewsbury,1.479,1.195,2.673,True,0.426,0.278,0.296
+2026-09-01,Salford,Newport County,2.082,0.948,3.03,True,0.625,0.223,0.152
+2026-09-01,Swindon,Port Vale,1.201,1.56,2.761,True,0.294,0.253,0.453
+2026-09-01,Tranmere,Rotherham,1.414,1.116,2.53,True,0.427,0.287,0.287
+2026-09-05,Fleetwood Town,Shrewsbury,1.562,0.987,2.549,True,0.497,0.272,0.231
+2026-09-05,Salford,Port Vale,1.644,1.029,2.673,True,0.508,0.263,0.23
+2026-09-05,Accrington,Crawley Town,1.66,1.171,2.831,True,0.478,0.261,0.261
+2026-09-05,Bristol Rvs,Rotherham,1.91,1.131,3.042,True,0.549,0.228,0.222
+2026-09-05,Cheltenham,Grimsby,1.167,1.675,2.843,True,0.256,0.263,0.482
+2026-09-05,Chesterfield,Barnet,1.592,1.244,2.836,True,0.442,0.273,0.285
+2026-09-05,Crewe,York,1.281,1.435,2.716,True,0.326,0.278,0.396
+2026-09-05,Exeter,Walsall,1.412,1.35,2.763,True,0.375,0.278,0.347
+2026-09-05,Northampton,Newport County,1.667,0.913,2.58,True,0.543,0.254,0.203
+2026-09-05,Rochdale,Gillingham,1.453,1.074,2.527,True,0.448,0.282,0.27
+2026-09-05,Swindon,Colchester,1.402,1.341,2.743,True,0.373,0.281,0.345
+2026-09-05,Tranmere,Oldham,1.154,1.414,2.568,True,0.297,0.284,0.419

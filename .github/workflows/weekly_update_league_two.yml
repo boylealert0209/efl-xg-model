@@ -1,0 +1,38 @@
+name: Weekly League Two xG update
+
+on:
+  schedule:
+    # 06:30 UTC every Tuesday - staggered after the Championship (06:00)
+    # and League One (06:15) jobs so the three don't hit
+    # football-data.co.uk/FotMob at the exact same second.
+    - cron: '30 6 * * 2'
+  workflow_dispatch: {}   # lets you also trigger it manually from the Actions tab
+
+permissions:
+  contents: write   # needed to commit the updated data/ files back to the repo
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run weekly update
+        run: python run_weekly_update.py --league league-two
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "Weekly League Two data update: $(date -u +'%Y-%m-%d')"
+          git push
