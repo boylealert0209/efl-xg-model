@@ -2,60 +2,71 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-08-15T11:30:00Z,Notts County,Leicester,2.18,0.74,1,1
 2026-08-15T11:30:00Z,Oxford Utd,MK Dons,1.83,2.2,2,2
 2026-08-15T11:30:00Z,Reading,Luton,1.61,1.65,3,4
-2026-08-15T14:00:00Z,Barnsley,Bromley,1.32,1.42,0,1
-2026-08-15T14:00:00Z,Blackpool,Wycombe,2.37,1.29,1,1
-2026-08-15T14:00:00Z,Bradford,Peterborough,1.97,1.11,2,0
-2026-08-15T14:00:00Z,Burton,Stevenage,0.94,0.53,1,1
-2026-08-15T14:00:00Z,Cambridge,Wigan,1.74,2.2,3,2
-2026-08-15T14:00:00Z,Huddersfield,Wimbledon,1.24,0.38,3,0
-2026-08-15T14:00:00Z,Leyton Orient,Sheff Wed,1.38,2.84,1,2
-2026-08-15T14:00:00Z,Mansfield,Doncaster,1.44,1.06,2,1
 2026-08-15T14:00:00Z,Plymouth,Stockport County,0.92,1.81,1,3
+2026-08-15T14:00:00Z,Mansfield,Doncaster,1.44,1.06,2,1
+2026-08-15T14:00:00Z,Huddersfield,Wimbledon,1.24,0.38,3,0
+2026-08-15T14:00:00Z,Cambridge,Wigan,1.74,2.2,3,2
+2026-08-15T14:00:00Z,Leyton Orient,Sheff Wed,1.38,2.84,1,2
+2026-08-15T14:00:00Z,Bradford,Peterborough,1.97,1.11,2,0
+2026-08-15T14:00:00Z,Blackpool,Wycombe,2.37,1.29,1,1
+2026-08-15T14:00:00Z,Barnsley,Bromley,1.32,1.42,0,1
+2026-08-15T14:00:00Z,Burton,Stevenage,0.94,0.53,1,1
 2026-08-20T19:00:00Z,Sheff Wed,Bradford,1.49,0.59,0,1
-2026-08-22T11:30:00Z,Doncaster,Barnsley,1.82,0.45,0,0
 2026-08-22T11:30:00Z,Luton,Notts County,1.85,0.76,2,2
-2026-08-22T14:00:00Z,Wimbledon,Reading,0.37,1.28,0,0
-2026-08-22T14:00:00Z,Bromley,Cambridge,0.58,0.59,1,1
-2026-08-22T14:00:00Z,Leicester,Burton,1.31,0.81,1,2
-2026-08-22T14:00:00Z,MK Dons,Huddersfield,1.54,2.28,1,1
-2026-08-22T14:00:00Z,Peterborough,Mansfield,1.39,1.25,2,1
-2026-08-22T14:00:00Z,Stevenage,Oxford Utd,1.12,1.36,1,2
+2026-08-22T11:30:00Z,Doncaster,Barnsley,1.82,0.45,0,0
 2026-08-22T14:00:00Z,Stockport County,Blackpool,3.54,1.79,1,2
-2026-08-22T14:00:00Z,Wigan,Leyton Orient,1.6,1.25,0,2
 2026-08-22T14:00:00Z,Wycombe,Plymouth,1.89,0.76,1,1
+2026-08-22T14:00:00Z,Wigan,Leyton Orient,1.6,1.25,0,2
+2026-08-22T14:00:00Z,Stevenage,Oxford Utd,1.12,1.36,1,2
+2026-08-22T14:00:00Z,MK Dons,Huddersfield,1.54,2.28,1,1
+2026-08-22T14:00:00Z,Leicester,Burton,1.31,0.81,1,2
+2026-08-22T14:00:00Z,Bromley,Cambridge,0.58,0.59,1,1
+2026-08-22T14:00:00Z,Wimbledon,Reading,0.37,1.28,0,0
+2026-08-22T14:00:00Z,Peterborough,Mansfield,1.39,1.25,2,1
 2026-08-29T11:30:00Z,Blackpool,Peterborough,2.68,1.46,4,0
 2026-08-29T11:30:00Z,MK Dons,Leicester,0.55,1.48,0,0
-2026-08-29T14:00:00Z,Cambridge,Huddersfield,1.4,1.1,1,2
-2026-08-29T14:00:00Z,Leyton Orient,Barnsley,0.62,2.13,1,3
-2026-08-29T14:00:00Z,Notts County,Burton,2.08,0.16,2,1
-2026-08-29T14:00:00Z,Plymouth,Bradford,1.22,0.88,2,0
 2026-08-29T14:00:00Z,Sheff Wed,Bromley,4.23,1.58,7,2
 2026-08-29T14:00:00Z,Stevenage,Doncaster,0.6,0.75,2,2
 2026-08-29T14:00:00Z,Stockport County,Wycombe,1.21,1.52,5,1
+2026-08-29T14:00:00Z,Plymouth,Bradford,1.22,0.88,2,0
+2026-08-29T14:00:00Z,Notts County,Burton,2.08,0.16,2,1
+2026-08-29T14:00:00Z,Leyton Orient,Barnsley,0.62,2.13,1,3
+2026-08-29T14:00:00Z,Cambridge,Huddersfield,1.4,1.1,1,2
 2026-08-30T13:00:00Z,Wimbledon,Wigan,1.21,2.96,1,0
 2026-08-30T14:00:00Z,Mansfield,Luton,1.65,1.39,5,2
-2026-09-01T18:45:00Z,Bradford,Cambridge,2.15,0.99,1,2
-2026-09-01T18:45:00Z,Bromley,Leyton Orient,0.63,1.67,0,5
-2026-09-01T18:45:00Z,Doncaster,Notts County,1.12,0.85,1,1
-2026-09-01T18:45:00Z,Huddersfield,Oxford Utd,3.57,1.21,3,1
-2026-09-01T18:45:00Z,Leicester,Plymouth,1.49,1.15,2,0
 2026-09-01T18:45:00Z,Peterborough,Stevenage,0.93,0.56,0,0
 2026-09-01T18:45:00Z,Wycombe,Sheff Wed,1.28,2.49,1,2
+2026-09-01T18:45:00Z,Leicester,Plymouth,1.49,1.15,2,0
+2026-09-01T18:45:00Z,Bradford,Cambridge,2.15,0.99,1,2
+2026-09-01T18:45:00Z,Doncaster,Notts County,1.12,0.85,1,1
+2026-09-01T18:45:00Z,Bromley,Leyton Orient,0.63,1.67,0,5
+2026-09-01T18:45:00Z,Huddersfield,Oxford Utd,3.57,1.21,3,1
+2026-09-02T18:45:00Z,Wigan,MK Dons,2.02,2.47,3,1
+2026-09-02T18:45:00Z,Luton,Stockport County,1.4,0.76,2,0
 2026-09-02T18:45:00Z,Barnsley,Blackpool,2.43,2.08,2,1
 2026-09-02T18:45:00Z,Burton,Wimbledon,0.92,1.34,4,1
-2026-09-02T18:45:00Z,Luton,Stockport County,1.4,0.76,2,0
-2026-09-02T18:45:00Z,Wigan,MK Dons,2.02,2.47,3,1
 2026-09-02T19:00:00Z,Reading,Mansfield,3.3,1.36,5,0
 2026-09-05T11:30:00Z,Peterborough,Sheff Wed,1.97,1.36,1,2
 2026-09-05T11:30:00Z,Wigan,Stockport County,0.97,2.52,0,4
-2026-09-05T14:00:00Z,Barnsley,Stevenage,1.79,1.98,1,5
-2026-09-05T14:00:00Z,Bradford,Mansfield,1.2,0.49,1,0
-2026-09-05T14:00:00Z,Burton,Cambridge,2.23,1.28,2,2
-2026-09-05T14:00:00Z,Doncaster,Plymouth,2.63,2.32,2,3
+2026-09-05T14:00:00Z,Wycombe,MK Dons,1.17,2.14,3,3
+2026-09-05T14:00:00Z,Reading,Blackpool,3.52,0.53,3,1
+2026-09-05T14:00:00Z,Luton,Leyton Orient,2.12,0.58,1,1
 2026-09-05T14:00:00Z,Huddersfield,Notts County,1.57,1.44,1,1
 2026-09-05T14:00:00Z,Leicester,Oxford Utd,0.99,2.25,0,4
-2026-09-05T14:00:00Z,Luton,Leyton Orient,2.12,0.58,1,1
-2026-09-05T14:00:00Z,Reading,Blackpool,3.52,0.53,3,1
-2026-09-05T14:00:00Z,Wycombe,MK Dons,1.17,2.14,3,3
+2026-09-05T14:00:00Z,Burton,Cambridge,2.23,1.28,2,2
+2026-09-05T14:00:00Z,Bradford,Mansfield,1.2,0.49,1,0
+2026-09-05T14:00:00Z,Barnsley,Stevenage,1.79,1.98,1,5
+2026-09-05T14:00:00Z,Doncaster,Plymouth,2.63,2.32,2,3
 2026-09-07T19:00:00Z,Bromley,Wimbledon,0.55,1.22,0,2
 2026-09-10T19:00:00Z,Stevenage,Luton,1.31,0.89,2,1
+2026-09-12T11:30:00Z,Leyton Orient,Wycombe,0.88,1.15,2,3
+2026-09-12T11:30:00Z,Notts County,Bradford,0.49,0.5,0,1
+2026-09-12T14:00:00Z,Plymouth,Barnsley,0.99,0.77,3,0
+2026-09-12T14:00:00Z,Oxford Utd,Burton,1.21,0.47,3,0
+2026-09-12T14:00:00Z,MK Dons,Peterborough,1.22,1.27,1,1
+2026-09-12T14:00:00Z,Wimbledon,Doncaster,0.78,1.96,1,0
+2026-09-12T14:00:00Z,Cambridge,Reading,0.94,1.99,2,1
+2026-09-12T14:00:00Z,Blackpool,Bromley,1.17,1.38,2,2
+2026-09-12T14:00:00Z,Sheff Wed,Wigan,0.82,1.59,0,0
+2026-09-12T14:00:00Z,Mansfield,Huddersfield,0.86,1.36,0,0
+2026-09-12T14:00:00Z,Stockport County,Leicester,2.29,1.21,3,4

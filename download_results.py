@@ -37,7 +37,7 @@ from pathlib import Path
 
 import requests
 
-from leagues import get_league
+from leagues import get_league, league_choices
 
 BASE_URL = "https://www.football-data.co.uk/mmz4281"
 HEADERS = {
@@ -96,7 +96,7 @@ def download(season: str, league_code: str, output_path: str) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--league", default="championship",
-                         choices=["championship", "league-one", "league-two"])
+                         choices=league_choices())
     parser.add_argument("--season", default=None,
                          help="Season code, e.g. 2627. Defaults to auto-detecting from today's date.")
     parser.add_argument("--output", default=None,

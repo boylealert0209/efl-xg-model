@@ -62,7 +62,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from leagues import get_league
+from leagues import get_league, league_choices
 
 HEADERS = {
     "User-Agent": (
@@ -266,7 +266,7 @@ def main(output_path, since, league_key):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--league", default="championship",
-                         choices=["championship", "league-one", "league-two"])
+                         choices=league_choices())
     parser.add_argument("--output", required=True)
     parser.add_argument("--since", default=None,
                          help="Only include matches on/after this date (YYYY-MM-DD)")

@@ -98,6 +98,39 @@ TEAM_NAME_MAP = {
     "MK Dons": "Milton Keynes Dons",
     "Fleetwood": "Fleetwood Town",
     "Swindon": "Swindon Town",
+    # Premier League short-name -> full-name starter entries (same caveat
+    # as above: not verified against the current season's actual PL
+    # membership, just common football-data.co.uk vs FotMob spellings).
+    "Man United": "Manchester United",
+    "Man Utd": "Manchester United",
+    "Man City": "Manchester City",
+    "Newcastle": "Newcastle United",
+    "Tottenham": "Tottenham Hotspur",
+    "Wolves": "Wolverhampton Wanderers",
+    "West Ham": "West Ham United",
+    "Brighton": "Brighton & Hove Albion",
+    "Leeds": "Leeds United",
+    "Nott'm Forest": "Nottingham Forest",
+    # Scottish Premiership starter entries.
+    "Hearts": "Heart of Midlothian",
+    "Dundee Utd": "Dundee United",
+    "St Johnstone": "St Johnstone",
+    # National League starter entries - the division has ~24 clubs whose
+    # names change every season with promotion/relegation from a much
+    # larger non-league pyramid, so this is deliberately just a few of
+    # the more common short/long-name mismatches seen historically, not
+    # a verified list for the current season - extend from whatever
+    # build_deltas.py reports as unmatched, same as every other league.
+    "FC Halifax": "FC Halifax Town",
+    "Dag and Red": "Dagenham & Redbridge",
+    "Forest Green": "Forest Green Rovers",
+    "Boreham Wood": "Boreham Wood",
+    "Ebbsfleet": "Ebbsfleet United",
+    "Solihull": "Solihull Moors",
+    "Woking": "Woking",
+    "Yeovil": "Yeovil Town",
+    "Altrincham": "Altrincham",
+    "Aldershot": "Aldershot Town",
 }
 
 

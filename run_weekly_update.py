@@ -3,20 +3,25 @@ run_weekly_update.py
 
 Purpose
 -------
-Run the whole weekly refresh, for one EFL division, in one command:
+Run the whole weekly refresh, for one league, in one command:
 
-    1. download_results.py   -> data/<fd_code>.csv              (odds + results)
-    2. derive_prematch_xg.py -> data/prematch_xg_<league>.csv    (market-implied xG)
-    3. scrape_fotmob.py      -> data/fotmob_<league>_xg.csv      (shot-based xG, incremental)
+    1. download_results.py   -> data/<fd_code>.csv                    (odds + results)
+    2. derive_prematch_xg.py -> data/prematch_xg_<league>.csv          (market-implied xG)
+    3. scrape_fotmob.py      -> data/fotmob_<league>_xg.csv            (shot-based xG, incremental)
     4. build_deltas.py       -> data/team_match_deltas_<league>.csv
-    5. build_team_workbook.py -> data/<league>_xg_report.xlsx    (one tab per team)
+    5. download_fixtures.py  -> data/fixtures_<league>.csv             (upcoming fixtures + odds)
+    6. derive_prematch_xg.py -> data/prematch_xg_fixtures_<league>.csv (market-implied xG for #5)
+    7. build_team_workbook.py -> data/<league>_xg_report.xlsx         (one tab per team + fixtures)
 
-Pick the division with --league (championship / league-one / league-two,
-see leagues.py) — everything downstream (filenames, football-data.co.uk
-code, FotMob league id) follows from that one flag:
+Pick the league with --league (see leagues.py for the full list - run
+`python run_weekly_update.py --help` to see it) — everything downstream
+(filenames, football-data.co.uk code, FotMob league id) follows from that
+one flag:
 
     python run_weekly_update.py --league league-one
-    python run_weekly_update.py --league league-two
+    python run_weekly_update.py --league premier-league
+    python run_weekly_update.py --league spl
+    python run_weekly_update.py --league national-league
     python run_weekly_update.py                        # defaults to championship
 
 This is what the scheduled GitHub Actions workflows in .github/workflows/
@@ -34,7 +39,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from leagues import get_league
+from leagues import get_league, league_choices
 
 ROLLING_WINDOW = 6
 
@@ -43,6 +48,8 @@ def build_steps(league_key: str, league: dict) -> list:
     fotmob_xg_path = f"data/fotmob_{league_key}_xg.csv"
     results_path = f"data/{league['fd_code']}.csv"
     prematch_path = f"data/prematch_xg_{league_key}.csv"
+    fixtures_path = f"data/fixtures_{league_key}.csv"
+    fixtures_prematch_path = f"data/prematch_xg_fixtures_{league_key}.csv"
     deltas_path = f"data/team_match_deltas_{league_key}.csv"
     report_path = f"data/{league_key}_xg_report.xlsx"
 
@@ -64,10 +71,18 @@ def build_steps(league_key: str, league: dict) -> list:
           "--postmatch", fotmob_xg_path,
           "--output", deltas_path,
           "--rolling-window", str(ROLLING_WINDOW)]),
-        ("Building the Excel workbook (one tab per team, league table, overview)",
+        ("Downloading upcoming fixtures/odds (for the Upcoming Fixtures sheet)",
+         [sys.executable, "download_fixtures.py",
+          "--league", league_key, "--output", fixtures_path]),
+        ("Deriving pre-match market-implied xG for upcoming fixtures",
+         [sys.executable, "derive_prematch_xg.py",
+          "--league", league_key,
+          "--input", fixtures_path, "--output", fixtures_prematch_path]),
+        ("Building the Excel workbook (one tab per team, league table, overview, fixtures)",
          [sys.executable, "build_team_workbook.py",
           "--input", deltas_path,
           "--results", results_path,
+          "--fixtures", fixtures_prematch_path,
           "--output", report_path,
           "--rolling-window", str(ROLLING_WINDOW)]),
     ], fotmob_xg_path, report_path
@@ -95,7 +110,7 @@ def resolve_since_date(fotmob_xg_path: str) -> str:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--league", default="championship",
-                         choices=["championship", "league-one", "league-two"])
+                         choices=league_choices())
     args = parser.parse_args()
 
     league = get_league(args.league)

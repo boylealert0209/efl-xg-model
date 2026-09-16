@@ -69,7 +69,7 @@ import pandas as pd
 from scipy.optimize import minimize
 from scipy.stats import poisson
 
-from leagues import get_league
+from leagues import get_league, league_choices
 
 RHO_DEFAULT = -0.1
 MAX_GOALS = 10  # scoreline grid truncation
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     parser.add_argument("--input", required=True, help="Path to football-data.co.uk style odds CSV")
     parser.add_argument("--output", required=True, help="Path to write derived pre-match xG CSV")
     parser.add_argument("--league", default="championship",
-                         choices=["championship", "league-one", "league-two"],
+                         choices=league_choices(),
                          help="Used only to pick the default --fallback-total-goals for this division.")
     parser.add_argument("--fallback-total-goals", type=float, default=None,
                          help="League-average total goals prior, used only when no O/U line is present. "

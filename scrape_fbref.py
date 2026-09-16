@@ -75,7 +75,7 @@ import time
 import pandas as pd
 import requests
 
-from leagues import get_league
+from leagues import get_league, league_choices
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; personal-research-script/1.0)"
@@ -186,7 +186,7 @@ def main(season, output_path, league_key):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--league", default="championship",
-                         choices=["championship", "league-one", "league-two"])
+                         choices=league_choices())
     parser.add_argument("--season", default=None,
                          help="Season in FBref's format, e.g. 2024-2025. Omit for current season.")
     parser.add_argument("--output", required=True, help="Path to write tidy match xG CSV")
