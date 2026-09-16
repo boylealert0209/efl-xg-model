@@ -110,11 +110,13 @@ TEAM_NAME_MAP = {
     "West Ham": "West Ham United",
     "Brighton": "Brighton & Hove Albion",
     "Leeds": "Leeds United",
-    "Nott'm Forest": "Nottingham Forest",
+    "Nottm Forest": "Nottingham Forest",  # FotMob's spelling (no apostrophe) - "Nott'm Forest" above is football-data.co.uk's
     # Scottish Premiership starter entries.
     "Hearts": "Heart of Midlothian",
     "Dundee Utd": "Dundee United",
-    "St Johnstone": "St Johnstone",
+    "St. Mirren": "St Mirren",
+    "St. Johnstone": "St Johnstone",
+    "Dundee FC": "Dundee",  # FotMob disambiguates "Dundee" from "Dundee United" this way
     # National League starter entries - the division has ~24 clubs whose
     # names change every season with promotion/relegation from a much
     # larger non-league pyramid, so this is deliberately just a few of

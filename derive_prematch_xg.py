@@ -212,11 +212,22 @@ def process_file(input_path, output_path, fallback_total_goals=2.6):
             print(f"Skipping row due to error: {e}")
             continue
 
-    out_df = pd.DataFrame(rows)
+    OUTPUT_COLUMNS = [
+        "date", "home_team", "away_team", "xg_pre_market_home", "xg_pre_market_away",
+        "xg_pre_market_total", "used_ou_line", "market_p_home_win", "market_p_draw",
+        "market_p_away_win",
+    ]
+    # pd.DataFrame([]) has NO columns at all (not even empty ones), so an
+    # empty `rows` list - e.g. an upcoming-fixtures file with nothing in it
+    # between rounds - would otherwise make every later `out_df[...]`
+    # reference below raise KeyError instead of just writing an empty,
+    # correctly-headered CSV.
+    out_df = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
     out_df.to_csv(output_path, index=False)
     print(f"Wrote {len(out_df)} matches to {output_path}")
-    print(f"  -> {out_df['used_ou_line'].sum()} used an O/U line for the split; "
-          f"{(~out_df['used_ou_line']).sum()} used the fallback total-goals prior.")
+    if len(out_df) > 0:
+        print(f"  -> {out_df['used_ou_line'].sum()} used an O/U line for the split; "
+              f"{(~out_df['used_ou_line']).sum()} used the fallback total-goals prior.")
 
 
 if __name__ == "__main__":

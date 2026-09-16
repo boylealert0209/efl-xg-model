@@ -1,0 +1,4 @@
+date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
+2026-09-15,Falkirk,Hearts,1.152,1.73,2.882,True,0.244,0.258,0.498
+2026-09-15,Hibernian,Kilmarnock,2.296,0.971,3.267,True,0.664,0.194,0.142
+2026-09-15,Motherwell,Aberdeen,1.78,1.132,2.912,True,0.518,0.244,0.238

@@ -1,0 +1,41 @@
+date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
+2026-08-21,Arsenal,Coventry,2.554,0.592,3.147,True,0.791,0.136,0.073
+2026-08-22,Hull,Man United,0.766,2.225,2.992,True,0.112,0.19,0.698
+2026-08-22,Everton,Crystal Palace,1.486,1.15,2.637,True,0.441,0.271,0.288
+2026-08-22,Ipswich,Sunderland,1.295,1.315,2.611,True,0.352,0.288,0.361
+2026-08-22,Nott'm Forest,Leeds,1.434,1.204,2.638,True,0.413,0.28,0.307
+2026-08-22,Brentford,Tottenham,1.527,1.411,2.938,True,0.397,0.257,0.346
+2026-08-23,Brighton,Aston Villa,1.618,1.338,2.956,True,0.432,0.258,0.31
+2026-08-23,Man City,Bournemouth,2.318,1.089,3.407,True,0.639,0.21,0.151
+2026-08-23,Newcastle,Liverpool,1.293,1.918,3.212,True,0.241,0.253,0.506
+2026-08-24,Fulham,Chelsea,1.241,1.783,3.024,True,0.26,0.247,0.493
+2026-08-28,Crystal Palace,Man City,1.021,1.895,2.917,True,0.19,0.243,0.567
+2026-08-29,Liverpool,Nott'm Forest,2.078,0.949,3.027,True,0.627,0.209,0.164
+2026-08-29,Bournemouth,Everton,1.557,1.119,2.676,True,0.464,0.272,0.264
+2026-08-29,Coventry,Hull,1.651,1.05,2.701,True,0.501,0.272,0.227
+2026-08-29,Tottenham,Newcastle,1.607,1.389,2.996,True,0.421,0.253,0.327
+2026-08-30,Chelsea,Brighton,1.837,1.172,3.009,True,0.522,0.239,0.239
+2026-08-30,Leeds,Brentford,1.355,1.326,2.681,True,0.364,0.286,0.35
+2026-08-30,Sunderland,Fulham,1.356,1.168,2.523,True,0.396,0.297,0.307
+2026-08-30,Man United,Ipswich,2.218,0.874,3.092,True,0.673,0.191,0.136
+2026-08-31,Aston Villa,Arsenal,0.876,1.942,2.818,True,0.157,0.229,0.614
+2026-09-04,Ipswich,Liverpool,1.197,2.351,3.548,True,0.178,0.197,0.624
+2026-09-05,Newcastle,Bournemouth,1.746,1.368,3.114,True,0.451,0.263,0.287
+2026-09-05,Brentford,Sunderland,1.838,0.9,2.739,True,0.585,0.243,0.172
+2026-09-05,Brighton,Leeds,1.615,1.081,2.697,True,0.486,0.271,0.243
+2026-09-05,Fulham,Crystal Palace,1.451,1.193,2.643,True,0.414,0.293,0.293
+2026-09-05,Man City,Coventry,2.894,0.758,3.652,True,0.803,0.118,0.079
+2026-09-05,Nott'm Forest,Tottenham,1.395,1.247,2.641,True,0.395,0.279,0.327
+2026-09-05,Hull,Aston Villa,1.043,1.678,2.721,True,0.225,0.263,0.512
+2026-09-06,Everton,Man United,1.276,1.642,2.918,True,0.285,0.268,0.447
+2026-09-06,Arsenal,Chelsea,1.854,0.977,2.831,True,0.567,0.253,0.18
+2026-09-12,Aston Villa,Nott'm Forest,1.474,1.173,2.647,True,0.43,0.278,0.291
+2026-09-12,Bournemouth,Brentford,1.515,1.451,2.966,True,0.382,0.265,0.353
+2026-09-12,Chelsea,Hull,2.685,0.78,3.465,True,0.77,0.145,0.085
+2026-09-12,Crystal Palace,Ipswich,1.716,1.104,2.82,True,0.51,0.248,0.242
+2026-09-12,Liverpool,Fulham,2.297,0.987,3.283,True,0.662,0.188,0.15
+2026-09-12,Tottenham,Everton,1.563,1.098,2.661,True,0.474,0.263,0.263
+2026-09-12,Sunderland,Arsenal,0.687,1.846,2.533,True,0.127,0.232,0.642
+2026-09-13,Coventry,Brighton,1.145,1.723,2.868,True,0.252,0.245,0.503
+2026-09-13,Man United,Man City,1.419,1.798,3.217,True,0.294,0.251,0.455
+2026-09-14,Leeds,Newcastle,1.485,1.332,2.817,True,0.399,0.271,0.33

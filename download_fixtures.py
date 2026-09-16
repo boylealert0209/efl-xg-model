@@ -70,11 +70,24 @@ def download_and_filter(fd_code: str) -> pd.DataFrame:
     resp = requests.get(FIXTURES_URL, headers=HEADERS, timeout=30)
     resp.raise_for_status()
 
+    # This file is usually UTF-8 with a byte-order-mark (BOM) at the start
+    # - decoding straight to latin-1 (like the historical per-season files
+    # use) mangles that BOM into literal junk characters glued onto the
+    # first column's name ("Div" becomes "\ufeffDiv" / prints as "ï»¿Div"),
+    # which breaks the exact "Div" match below. "utf-8-sig" strips a BOM
+    # if present and behaves like plain utf-8 if there isn't one; fall back
+    # to latin-1 only if that fails (older-vintage football-data.co.uk
+    # files are Windows-1252/latin-1 with no BOM at all).
+    try:
+        text = resp.content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = resp.content.decode("latin-1")
+
     # This combined file covers every league football-data.co.uk tracks,
     # so a byte-count sanity check (like download_results.py's) isn't
     # useful here - instead just check it actually parses and has a Div
     # column before trusting it.
-    df = pd.read_csv(StringIO(resp.content.decode("latin-1")))
+    df = pd.read_csv(StringIO(text))
     if "Div" not in df.columns:
         raise ValueError(
             f"Downloaded fixtures.csv has no 'Div' column - football-data.co.uk "
