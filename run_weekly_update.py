@@ -102,7 +102,7 @@ def resolve_since_date(fotmob_xg_path: str) -> str:
     df = pd.read_csv(path)
     if df.empty or "date" not in df.columns:
         return None
-    latest = pd.to_datetime(df["date"]).max()
+    latest = pd.to_datetime(df["date"], format="mixed", utc=True).max()
     since = (latest - pd.Timedelta(days=7)).date().isoformat()
     return since
 

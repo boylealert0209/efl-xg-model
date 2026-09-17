@@ -86,6 +86,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.formatting.rule import ColorScaleRule
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.chart import BarChart, Reference
 
 # Reuse the same team-name normalisation as build_deltas.py, so every sheet
 # (built from E1.csv-style naming, e.g. "QPR") uses the same names as the
@@ -128,8 +129,28 @@ MATCH_COLUMNS = [
     ("xG Delta (Against)", "xg_delta_against"),
     ("Rolling Delta (For)", "xg_delta_for_rolling"),
     ("Rolling Delta (Against)", "xg_delta_against_rolling"),
+    # Opponent-strength-adjusted deltas (from build_deltas.py's
+    # add_opponent_adjustment): xg_delta_for adjusted for how well this
+    # opponent generally defends, and xg_delta_against adjusted for how
+    # well this opponent generally attacks. NaN for a team's first match
+    # against a given opponent (not enough history yet to estimate that
+    # opponent's own strength) - shown blank rather than 0.
+    ("xG Delta (For, Adj)", "xg_delta_for_adj"),
+    ("xG Delta (Against, Adj)", "xg_delta_against_adj"),
+    ("Rolling Delta (For, Adj)", "xg_delta_for_adj_rolling"),
+    ("Rolling Delta (Against, Adj)", "xg_delta_against_adj_rolling"),
     ("Supremacy Delta", "supremacy_delta"),
     ("Match Total xG Delta", "total_xg_delta"),
+    # Expected points (from build_deltas.py's add_expected_points): deserved
+    # points from this match's actual (shot-based) xG vs. from the pre-match
+    # market xG, via an independent-Poisson scoreline model. Cumulative
+    # columns are a running season total in date order - the "xPts table"
+    # sheet uses each team's final cumulative value.
+    ("xPts (Actual)", "xpts_actual"),
+    ("xPts (Market)", "xpts_market"),
+    ("xPts Delta", "xpts_delta"),
+    ("xPts (Actual, Cum.)", "xpts_actual_cumulative"),
+    ("xPts (Market, Cum.)", "xpts_market_cumulative"),
 ]
 
 MW_NOTE = ('"MW" here means this team\'s own 1st, 2nd, 3rd... match of the '
@@ -144,6 +165,12 @@ ABOUT_NOTE = (
     "were made (sort orders, what \"expected supremacy\" means for "
     "upcoming fixtures, etc.)."
 )
+
+
+def round_or_none(x, ndigits=2):
+    """round() a possibly-NaN value, returning None (blank cell) for NaN
+    instead of the string 'nan' openpyxl would otherwise write."""
+    return None if pd.isna(x) else round(x, ndigits)
 
 
 def safe_sheet_name(name: str, used: set) -> str:
@@ -310,7 +337,7 @@ def write_team_sheet(wb: Workbook, sheet_name: str, team_df: pd.DataFrame, rolli
             elif col == "venue":
                 val = str(val).title()
             elif isinstance(val, float):
-                val = round(val, 2)
+                val = None if pd.isna(val) else round(val, 2)
             row_values.append(val)
         ws.append(row_values)
 
@@ -332,13 +359,17 @@ def write_team_sheet(wb: Workbook, sheet_name: str, team_df: pd.DataFrame, rolli
     # coloured too now (green = higher-scoring match than the market
     # expected, red = lower) - it's a fact about the match rather than a
     # team performance stat, but still meaningfully signed around zero.
-    for header in ("xG Delta (For)", "Rolling Delta (For)", "Supremacy Delta"):
+    for header in ("xG Delta (For)", "Rolling Delta (For)",
+                   "xG Delta (For, Adj)", "Rolling Delta (For, Adj)", "Supremacy Delta"):
         letter = col_letter[header]
         color_scale_zero(ws, f"{letter}2:{letter}{last_row}", invert=False)
-    for header in ("xG Delta (Against)", "Rolling Delta (Against)"):
+    for header in ("xG Delta (Against)", "Rolling Delta (Against)",
+                   "xG Delta (Against, Adj)", "Rolling Delta (Against, Adj)"):
         letter = col_letter[header]
         color_scale_zero(ws, f"{letter}2:{letter}{last_row}", invert=True)
     letter = col_letter["Match Total xG Delta"]
+    color_scale_zero(ws, f"{letter}2:{letter}{last_row}", invert=False)
+    letter = col_letter["xPts Delta"]
     color_scale_zero(ws, f"{letter}2:{letter}{last_row}", invert=False)
 
     # Summary block: real formulas over the table above, not re-typed
@@ -360,12 +391,28 @@ def write_team_sheet(wb: Workbook, sheet_name: str, team_df: pd.DataFrame, rolli
         ("Median xG Delta (For)", f"=MEDIAN({col_range('xG Delta (For)')})", False),
         ("Avg xG Delta (Against)", f"=AVERAGE({col_range('xG Delta (Against)')})", False),
         ("Median xG Delta (Against)", f"=MEDIAN({col_range('xG Delta (Against)')})", False),
+        # AVERAGE/MEDIAN skip blank cells automatically, so the (Adj)
+        # columns' blanks (a team's first meeting with a given opponent -
+        # no history yet to gauge that opponent's strength) don't need
+        # special-casing here.
+        ("Avg xG Delta (For, Adj)", f"=AVERAGE({col_range('xG Delta (For, Adj)')})", False),
+        ("Median xG Delta (For, Adj)", f"=MEDIAN({col_range('xG Delta (For, Adj)')})", False),
+        ("Avg xG Delta (Against, Adj)", f"=AVERAGE({col_range('xG Delta (Against, Adj)')})", False),
+        ("Median xG Delta (Against, Adj)", f"=MEDIAN({col_range('xG Delta (Against, Adj)')})", False),
         ("Avg Supremacy Delta", f"=AVERAGE({col_range('Supremacy Delta')})", False),
         ("Median Supremacy Delta", f"=MEDIAN({col_range('Supremacy Delta')})", False),
         ("Avg Total xG Delta", f"=AVERAGE({col_range('Match Total xG Delta')})", False),
         ("Median Total xG Delta", f"=MEDIAN({col_range('Match Total xG Delta')})", False),
         (f"Current form (last {rolling_window}, For)", f"={col_letter['Rolling Delta (For)']}{last_row}", False),
         (f"Current form (last {rolling_window}, Against)", f"={col_letter['Rolling Delta (Against)']}{last_row}", False),
+        (f"Current form (last {rolling_window}, For, Adj)", f"={col_letter['Rolling Delta (For, Adj)']}{last_row}", False),
+        (f"Current form (last {rolling_window}, Against, Adj)", f"={col_letter['Rolling Delta (Against, Adj)']}{last_row}", False),
+        # SUM (not AVERAGE) here, deliberately - a season TOTAL of deserved
+        # points, comparable to the real League Table's Pts column, not a
+        # per-match average.
+        ("Total xPts (Actual)", f"=SUM({col_range('xPts (Actual)')})", False),
+        ("Total xPts (Market)", f"=SUM({col_range('xPts (Market)')})", False),
+        ("Avg xPts Delta", f"=AVERAGE({col_range('xPts Delta')})", False),
     ]
     summary_rows = {}
     for i, (label, formula, is_integer) in enumerate(labels_formulas):
@@ -442,6 +489,18 @@ def write_team_sheet(wb: Workbook, sheet_name: str, team_df: pd.DataFrame, rolli
         "median_against": round(team_df["xg_delta_against"].median(), 2),
         "form_for": round(team_df["xg_delta_for_rolling"].iloc[-1], 2),
         "form_against": round(team_df["xg_delta_against_rolling"].iloc[-1], 2),
+        # .mean()/.median() skip NaNs already; only the final round() needs
+        # a NaN guard, for the (rare) case a team's played too few distinct
+        # opponents for any adjusted value to exist yet.
+        "avg_for_adj": round_or_none(team_df["xg_delta_for_adj"].mean()),
+        "median_for_adj": round_or_none(team_df["xg_delta_for_adj"].median()),
+        "avg_against_adj": round_or_none(team_df["xg_delta_against_adj"].mean()),
+        "median_against_adj": round_or_none(team_df["xg_delta_against_adj"].median()),
+        "form_for_adj": round_or_none(team_df["xg_delta_for_adj_rolling"].iloc[-1]),
+        "form_against_adj": round_or_none(team_df["xg_delta_against_adj_rolling"].iloc[-1]),
+        "total_xpts_actual": round(team_df["xpts_actual"].sum(), 2),
+        "total_xpts_market": round(team_df["xpts_market"].sum(), 2),
+        "avg_xpts_delta": round(team_df["xpts_delta"].mean(), 2),
         "avg_supremacy": stat_block(supremacy_full)["avg"],
         "median_supremacy": stat_block(supremacy_full)["median"],
         "avg_total_delta": stat_block(total_full)["avg"],
@@ -481,9 +540,13 @@ def write_overview_sheet(wb: Workbook, team_info: dict, rolling_window: int):
         "Team", "Matches Played", "Total Goals For", "Total Goals Against",
         "Avg xG Delta (For)", "Median xG Delta (For)",
         "Avg xG Delta (Against)", "Median xG Delta (Against)",
+        "Avg xG Delta (For, Adj)", "Median xG Delta (For, Adj)",
+        "Avg xG Delta (Against, Adj)", "Median xG Delta (Against, Adj)",
         "Avg Supremacy Delta", "Median Supremacy Delta",
         "Avg Total xG Delta", "Median Total xG Delta",
         f"Current Form ({rolling_window}, For)", f"Current Form ({rolling_window}, Against)",
+        f"Current Form ({rolling_window}, For, Adj)", f"Current Form ({rolling_window}, Against, Adj)",
+        "Total xPts (Actual)", "Total xPts (Market)", "Avg xPts Delta",
     ]
     ws.append(headers)
     style_header_row(ws, 1, len(headers))
@@ -491,8 +554,10 @@ def write_overview_sheet(wb: Workbook, team_info: dict, rolling_window: int):
     row_order = sorted(team_info.keys(), key=lambda t: team_info[t]["stats"]["avg_for"], reverse=True)
 
     stat_keys = ["matches", "gf", "ga", "avg_for", "median_for", "avg_against", "median_against",
+                 "avg_for_adj", "median_for_adj", "avg_against_adj", "median_against_adj",
                  "avg_supremacy", "median_supremacy", "avg_total_delta", "median_total_delta",
-                 "form_for", "form_against"]
+                 "form_for", "form_against", "form_for_adj", "form_against_adj",
+                 "total_xpts_actual", "total_xpts_market", "avg_xpts_delta"]
     width_hints = {i + 2: [] for i in range(len(stat_keys))}
     for team in row_order:
         info = team_info[team]
@@ -501,9 +566,13 @@ def write_overview_sheet(wb: Workbook, team_info: dict, rolling_window: int):
             "Matches played", "Total goals for", "Total goals against",
             "Avg xG Delta (For)", "Median xG Delta (For)",
             "Avg xG Delta (Against)", "Median xG Delta (Against)",
+            "Avg xG Delta (For, Adj)", "Median xG Delta (For, Adj)",
+            "Avg xG Delta (Against, Adj)", "Median xG Delta (Against, Adj)",
             "Avg Supremacy Delta", "Median Supremacy Delta",
             "Avg Total xG Delta", "Median Total xG Delta",
             f"Current form (last {rolling_window}, For)", f"Current form (last {rolling_window}, Against)",
+            f"Current form (last {rolling_window}, For, Adj)", f"Current form (last {rolling_window}, Against, Adj)",
+            "Total xPts (Actual)", "Total xPts (Market)", "Avg xPts Delta",
         ]
         ws.append([team] + [f"='{sheet_name}'!$E${sr[lbl]}" for lbl in row_labels])
         for i, key in enumerate(stat_keys):
@@ -520,9 +589,15 @@ def write_overview_sheet(wb: Workbook, team_info: dict, rolling_window: int):
     zero_centered_cols = {
         5: False, 6: False,    # xG Delta (For) avg/median: higher = better
         7: True, 8: True,      # xG Delta (Against) avg/median: lower = better
-        9: False, 10: False,   # Supremacy Delta avg/median: higher = better
-        11: False, 12: False,  # Total xG Delta avg/median: no "good" direction, just signed
-        13: False, 14: True,   # Current form For/Against
+        9: False, 10: False,   # xG Delta (For, Adj) avg/median: higher = better
+        11: True, 12: True,    # xG Delta (Against, Adj) avg/median: lower = better
+        13: False, 14: False,  # Supremacy Delta avg/median: higher = better
+        15: False, 16: False,  # Total xG Delta avg/median: no "good" direction, just signed
+        17: False, 18: True,   # Current form For/Against
+        19: False, 20: True,   # Current form For/Against, Adj
+        23: False,             # Avg xPts Delta: higher = better, zero-anchored (Total xPts cols 21/22 are
+                                # left uncoloured, like Total Goals For/Against - a plain positive total,
+                                # not a delta, so a zero-anchored scale would just paint everything green)
     }
     for col_idx, invert in zero_centered_cols.items():
         col_letter = get_column_letter(col_idx)
@@ -532,6 +607,292 @@ def write_overview_sheet(wb: Workbook, team_info: dict, rolling_window: int):
     autosize_columns(ws, len(headers), width_hints=width_hints)
     ws.column_dimensions["A"].width = max(ws.column_dimensions["A"].width, 14)  # Team
     polish_sheet(ws, header_row=1, first_data_row=2, last_data_row=last_row, n_cols=len(headers))
+
+
+def write_xpts_table_sheet(wb: Workbook, team_info: dict):
+    """The "truer league table" from the brief: teams ranked by season-total
+    expected points (deserved points from actual shot-based xG, via an
+    independent-Poisson scoreline model - see build_deltas.py's
+    add_expected_points), alongside what the market expected them to earn,
+    rather than by the actual (bounce-of-the-ball) results. Pos is by xPts
+    (Actual) descending - there's no goal-difference-style tiebreak here
+    since xPts is already a continuous number, ties are vanishingly rare."""
+    ws = wb.create_sheet("xPts Table")
+    headers = ["Pos", "Team", "Matches", "xPts (Actual)", "xPts (Market)", "xPts Delta (Total)"]
+    ws.append(headers)
+    style_header_row(ws, 1, len(headers))
+
+    row_order = sorted(team_info.keys(),
+                        key=lambda t: team_info[t]["stats"]["total_xpts_actual"], reverse=True)
+
+    width_hints = {3: [], 4: [], 5: [], 6: []}
+    for pos, team in enumerate(row_order, start=1):
+        info = team_info[team]
+        sheet_name, sr, s = info["sheet_name"], info["summary_rows"], info["stats"]
+        actual_row = sr["Total xPts (Actual)"]
+        market_row = sr["Total xPts (Market)"]
+        actual_ref = f"='{sheet_name}'!$E${actual_row}"
+        market_ref = f"='{sheet_name}'!$E${market_row}"
+        r = ws.max_row + 1
+        ws.cell(row=r, column=1, value=pos)
+        ws.cell(row=r, column=2, value=team)
+        ws.cell(row=r, column=3, value=f"='{sheet_name}'!$E${sr['Matches played']}")
+        ws.cell(row=r, column=4, value=actual_ref)
+        ws.cell(row=r, column=5, value=market_ref)
+        ws.cell(row=r, column=6, value=f"=D{r}-E{r}")
+        width_hints[3].append(s["matches"])
+        width_hints[4].append(s["total_xpts_actual"])
+        width_hints[5].append(s["total_xpts_market"])
+        width_hints[6].append(round(s["total_xpts_actual"] - s["total_xpts_market"], 2))
+
+    last_row = ws.max_row
+    for row in ws.iter_rows(min_row=2, max_row=last_row, max_col=len(headers)):
+        for cell in row:
+            cell.font = BODY_FONT
+            if cell.column == 1:
+                cell.alignment = Alignment(horizontal="center")
+            if cell.column in (4, 5, 6):
+                cell.number_format = "0.00"
+
+    color_scale_zero(ws, f"F2:F{last_row}", invert=False)  # xPts Delta (Total): higher = better
+
+    ws.freeze_panes = "A2"
+    autosize_columns(ws, len(headers), width_hints=width_hints)
+    ws.column_dimensions["B"].width = max(ws.column_dimensions["B"].width, 14)  # Team
+    polish_sheet(ws, header_row=1, first_data_row=2, last_data_row=last_row, n_cols=len(headers))
+
+
+def build_match_log(df: pd.DataFrame) -> pd.DataFrame:
+    """Reshape team_match_deltas.csv (one row per team per match) into one
+    row per FIXTURE - the "single master data table" from the brief.
+
+    Every number on this sheet is already duplicated across two rows in
+    df (the home team's row and the away team's mirror row - see
+    build_deltas.py's to_long_form), so this is a join back to itself on
+    (date, home_team, away_team), not new data - it doesn't reduce the
+    duplication in df, but gives one authoritative row per match instead
+    of forcing you to remember "home team's row" vs "away team's row"."""
+    home = df[df["venue"] == "home"].rename(columns={"team": "home_team", "opponent": "away_team"})
+    away = df[df["venue"] == "away"].rename(columns={"team": "away_team", "opponent": "home_team"})
+    merged = pd.merge(
+        home, away, on=["date", "home_team", "away_team"], suffixes=("_home", "_away"),
+    )
+    merged = merged.sort_values("date").reset_index(drop=True)
+    return merged
+
+
+def write_match_log_sheet(wb: Workbook, match_log: pd.DataFrame):
+    """One row per fixture across every team, with an AutoFilter so you can
+    filter by opponent/venue/matchweek etc. without touching a pivot table
+    or a team tab. A basic AutoFilter (rather than a formal Excel Table
+    object) was used deliberately - Excel Tables/Slicers don't always
+    survive Google Sheets' xlsx import cleanly, while a plain AutoFilter
+    does; add a Table/Slicer over this range by hand in Excel if you're
+    staying in Excel."""
+    ws = wb.create_sheet("Match Log")
+
+    headers = [
+        "Date", "Home Team", "Away Team", "Home Goals", "Away Goals",
+        "Home xG Pre-Match", "Away xG Pre-Match", "Home xG Actual", "Away xG Actual",
+        "Home xG Delta", "Away xG Delta", "Supremacy Delta (Home)", "Total xG Delta",
+        "Home xPts (Actual)", "Away xPts (Actual)", "Home xPts (Market)", "Away xPts (Market)",
+    ]
+    ws.append(headers)
+    style_header_row(ws, 1, len(headers))
+
+    supremacy_full = ((match_log["xg_actual_for_home"] - match_log["xg_actual_against_home"])
+                       - (match_log["xg_pre_market_for_home"] - match_log["xg_pre_market_against_home"])).round(2)
+    total_full = ((match_log["xg_actual_for_home"] + match_log["xg_actual_against_home"])
+                  - (match_log["xg_pre_market_for_home"] + match_log["xg_pre_market_against_home"])).round(2)
+
+    for i, r in match_log.iterrows():
+        ws.append([
+            pd.to_datetime(r["date"]).strftime("%Y-%m-%d"),
+            r["home_team"], r["away_team"],
+            int(r["goals_for_home"]), int(r["goals_for_away"]),
+            round(r["xg_pre_market_for_home"], 2), round(r["xg_pre_market_for_away"], 2),
+            round(r["xg_actual_for_home"], 2), round(r["xg_actual_for_away"], 2),
+            round(r["xg_delta_for_home"], 2), round(r["xg_delta_for_away"], 2),
+            supremacy_full.iloc[i], total_full.iloc[i],
+            round(r["xpts_actual_home"], 2), round(r["xpts_actual_away"], 2),
+            round(r["xpts_market_home"], 2), round(r["xpts_market_away"], 2),
+        ])
+
+    last_row = ws.max_row
+    n_cols = len(headers)
+    decimal_cols = set(range(6, n_cols + 1))
+    for row in ws.iter_rows(min_row=2, max_row=last_row, max_col=n_cols):
+        for cell in row:
+            cell.font = BODY_FONT
+            if cell.column in decimal_cols:
+                cell.number_format = "0.00"
+
+    for header in ("Home xG Delta", "Supremacy Delta (Home)", "Total xG Delta"):
+        letter = get_column_letter(headers.index(header) + 1)
+        color_scale_zero(ws, f"{letter}2:{letter}{last_row}", invert=False)
+    letter = get_column_letter(headers.index("Away xG Delta") + 1)
+    color_scale_zero(ws, f"{letter}2:{letter}{last_row}", invert=True)
+
+    ws.auto_filter.ref = f"A1:{get_column_letter(n_cols)}{last_row}"
+    ws.freeze_panes = "A2"
+    autosize_columns(ws, n_cols, header_row=1, max_row=last_row)
+    ws.column_dimensions["B"].width = max(ws.column_dimensions["B"].width, 14)
+    ws.column_dimensions["C"].width = max(ws.column_dimensions["C"].width, 14)
+    polish_sheet(ws, header_row=1, first_data_row=2, last_data_row=last_row, n_cols=n_cols)
+
+
+def check_data_quality(match_log: pd.DataFrame) -> pd.DataFrame:
+    """Flag per-fixture problems in the numbers actually feeding the
+    workbook: missing xG/goals (usually a FotMob scrape that came back
+    empty for that match), negative xG or goals (impossible - a sign a
+    column got shifted or misread upstream), and exact-zero xG on both
+    sides in the same match (technically valid but suspicious - more
+    often a placeholder than a real 0.00-0.00 chance count).
+
+    "Broken formulas" and "non-numeric text" from the brief aren't
+    checked here because they can't reach this sheet in the first place:
+    every column here came from a pandas CSV read that would already have
+    raised (or coerced to NaN, which the missing-value check below already
+    catches) if a cell weren't numeric - there's no live formula in this
+    pipeline's data files for one to corrupt.
+
+    Returns a DataFrame with one row per (fixture, issue) - a single
+    fixture can appear more than once if it has several problems."""
+    issues = []
+    checks = [
+        ("xg_pre_market_for_home", "Home pre-match xG"),
+        ("xg_pre_market_for_away", "Away pre-match xG"),
+        ("xg_actual_for_home", "Home actual xG"),
+        ("xg_actual_for_away", "Away actual xG"),
+        ("goals_for_home", "Home goals"),
+        ("goals_for_away", "Away goals"),
+    ]
+    for _, r in match_log.iterrows():
+        row_issues = []
+        for col, label in checks:
+            val = r[col]
+            if pd.isna(val):
+                row_issues.append(f"Missing {label}")
+            elif val < 0:
+                row_issues.append(f"Negative {label} ({val})")
+        if pd.notna(r["xg_actual_for_home"]) and pd.notna(r["xg_actual_for_away"]) \
+                and r["xg_actual_for_home"] == 0 and r["xg_actual_for_away"] == 0:
+            row_issues.append("Both teams' actual xG are exactly 0.00 - worth checking the FotMob scrape for this match")
+        for issue in row_issues:
+            issues.append({"date": r["date"], "home_team": r["home_team"],
+                            "away_team": r["away_team"], "issue": issue})
+
+    dup_mask = match_log.duplicated(subset=["date", "home_team", "away_team"], keep=False)
+    for _, r in match_log[dup_mask].iterrows():
+        issues.append({"date": r["date"], "home_team": r["home_team"],
+                        "away_team": r["away_team"], "issue": "Duplicate fixture row in the data"})
+
+    return pd.DataFrame(issues, columns=["date", "home_team", "away_team", "issue"])
+
+
+def write_data_quality_sheet(wb: Workbook, match_log: pd.DataFrame):
+    """A short, hopefully-empty sheet: every fixture check_data_quality()
+    flagged, or a clean bill of health if none did. Meant as a first stop
+    before trusting a given run's numbers, not a replacement for the
+    "Warning: N pre-match rows did not find a match" console output
+    build_deltas.py already prints for fixtures that never made it into
+    the CSV at all - this sheet can only check what's IN the data, not
+    what's missing from it entirely."""
+    ws = wb.create_sheet("Data Quality")
+    issues_df = check_data_quality(match_log)
+
+    ws.cell(row=1, column=1, value="Data Quality Checker").font = TITLE_FONT
+    if issues_df.empty:
+        ws.cell(row=3, column=1,
+                value=f"No issues found across {len(match_log)} fixtures.").font = BOLD_FONT
+        ws.column_dimensions["A"].width = 50
+        return
+
+    ws.cell(row=2, column=1,
+            value=f"{len(issues_df)} issue(s) across {issues_df[['date', 'home_team', 'away_team']].drop_duplicates().shape[0]} "
+                  f"fixture(s), out of {len(match_log)} total.").font = SUBTITLE_FONT
+
+    headers = ["Date", "Home Team", "Away Team", "Issue"]
+    header_row = 4
+    for c, h in enumerate(headers, start=1):
+        ws.cell(row=header_row, column=c, value=h)
+    style_header_row(ws, header_row, len(headers))
+
+    for r in issues_df.itertuples(index=False):
+        ws.append([pd.to_datetime(r.date).strftime("%Y-%m-%d"), r.home_team, r.away_team, r.issue])
+
+    last_row = ws.max_row
+    for row in ws.iter_rows(min_row=header_row + 1, max_row=last_row, max_col=len(headers)):
+        for cell in row:
+            cell.font = BODY_FONT
+
+    ws.auto_filter.ref = f"A{header_row}:{get_column_letter(len(headers))}{last_row}"
+    ws.freeze_panes = f"A{header_row + 1}"
+    autosize_columns(ws, len(headers), header_row=header_row, max_row=last_row, max_width=60)
+    ws.column_dimensions["B"].width = max(ws.column_dimensions["B"].width, 14)
+    ws.column_dimensions["C"].width = max(ws.column_dimensions["C"].width, 14)
+    polish_sheet(ws, header_row=header_row, first_data_row=header_row + 1, last_data_row=last_row,
+                 n_cols=len(headers))
+
+
+def write_dashboard_sheet(wb: Workbook, n_teams: int):
+    """League-wide charts, built AFTER Overview and xPts Table exist since
+    every chart references their cells directly (live, not a snapshot - if
+    you re-open and edit a number on Overview, the chart moves with it).
+
+    Those referenced cells are themselves formulas (='TeamName'!$E$10 etc,
+    not literal numbers) - openpyxl can't evaluate formulas itself, so a
+    chart built this way renders blank/stale until Excel or Sheets
+    recalculates the workbook, which both do automatically on first open.
+    If a chart looks empty right after generation, open it in Excel/Sheets
+    once and it'll populate."""
+    ws = wb.create_sheet("Dashboard")
+    ws.sheet_view.showGridLines = False
+    ws.cell(row=1, column=1, value="League Dashboard").font = TITLE_FONT
+    ws.cell(row=2, column=1, value="Charts reference Overview / xPts Table live - re-run the "
+                                    "pipeline and they update automatically.").font = SUBTITLE_FONT
+
+    overview = wb["Overview"]
+    xpts_table = wb["xPts Table"]
+    last = 1 + n_teams  # last data row on both Overview (sorted by Avg xG Delta For) and xPts Table
+
+    def bar_chart(title, y_axis_title, source_ws, data_col, anchor, height=10, width=22):
+        chart = BarChart()
+        chart.type = "col"
+        chart.title = title
+        chart.y_axis.title = y_axis_title
+        chart.x_axis.title = None
+        chart.height, chart.width = height, width
+        chart.legend = None
+        data = Reference(source_ws, min_col=data_col, min_row=1, max_row=last)
+        cats = Reference(source_ws, min_col=1, min_row=2, max_row=last)
+        chart.add_data(data, titles_from_data=True)
+        chart.set_categories(cats)
+        ws.add_chart(chart, anchor)
+
+    # 1) League xG overperformance: every team's Avg xG Delta (For), in the
+    # order Overview is already sorted (best attacking overperformance
+    # first) - column E.
+    bar_chart("Avg xG Delta (For) by Team", "xG Delta", overview, 5, "A4")
+
+    # 2) Supremacy Delta by team - column M.
+    bar_chart("Avg Supremacy Delta by Team", "Supremacy Delta", overview, 13, "A25")
+
+    # 3) xPts (Actual) vs xPts (Market), grouped bar - columns D and E on
+    # the xPts Table sheet (already sorted by Actual, highest first).
+    chart3 = BarChart()
+    chart3.type = "col"
+    chart3.grouping = "clustered"
+    chart3.title = "xPts: Actual vs Market"
+    chart3.y_axis.title = "Expected Points"
+    chart3.height, chart3.width = 10, 22
+    data = Reference(xpts_table, min_col=4, max_col=5, min_row=1, max_row=last)
+    cats = Reference(xpts_table, min_col=2, min_row=2, max_row=last)
+    chart3.add_data(data, titles_from_data=True)
+    chart3.set_categories(cats)
+    ws.add_chart(chart3, "A46")
+
+    ws.column_dimensions["A"].width = 4
 
 
 def write_home_away_split_sheet(wb: Workbook, team_info: dict):
@@ -865,6 +1226,15 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
         ("Sheets in this workbook", BOLD_FONT),
         ("League Table - standard standings from every played match.", BODY_FONT),
         ("Overview - every team's season xG form, sorted by Avg xG Delta (For), best first.", BODY_FONT),
+        ("xPts Table - teams ranked by season-total expected points (deserved points from actual xG, plus what "
+         "the market expected), a \"truer\" table than the real one below since it's driven by chance quality "
+         "rather than which chances actually went in.", BODY_FONT),
+        ("Dashboard - three league-wide charts (xG Delta For, Supremacy Delta, xPts Actual vs Market) so patterns "
+         "are visible at a glance instead of scrolling through team tabs.", BODY_FONT),
+        ("Data Quality - flags fixtures with missing/negative xG or goals, or suspicious exact-0.00 xG on both "
+         "sides - a first stop before trusting a given run's numbers.", BODY_FONT),
+        ("Match Log - the single master data table: one row per fixture (not per team) with every core stat, "
+         "and an AutoFilter so you can filter by team/venue without hunting through team tabs.", BODY_FONT),
         ("Home & Away Splits - Total/Home/Away average and median supremacy, and Total/Home/Away goals, for every team.", BODY_FONT),
         ("Supremacy Delta / (Home) / (Away) - match-by-match grids of actual vs. expected xG supremacy.", BODY_FONT),
         ("Total xG Delta - match-by-match grid of how much higher/lower-scoring each match was than the market expected.", BODY_FONT),
@@ -885,6 +1255,11 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
          "all season (home team's season average added, away team's season average subtracted). This is a simple, "
          "transparent blend - not a fitted model - so treat it as a way to surface interesting fixtures, not a "
          "prediction.", BODY_FONT),
+        ("\u2022 xPts (expected points) use an independent-Poisson scoreline model - each side's goals treated as "
+         "Poisson-distributed around its xG, win/draw/loss probabilities computed from that, then "
+         "3\u00d7P(win) + 1\u00d7P(draw). It's the standard, simple way to turn two xG numbers into a points "
+         "estimate - not fitted to this league's actual scoring distribution - so treat xPts Delta as a useful "
+         "signal, not a precise number.", BODY_FONT),
         ("\u2022 The Supremacy Delta (Home) / (Away) grids are literal snapshots (computed once, at report-generation "
          "time) rather than live formulas like the full-season grid, since a team's home-only matches aren't a "
          "contiguous block of rows on its own sheet. Re-run the pipeline to refresh them.", BODY_FONT),
@@ -935,6 +1310,11 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
         away_supremacy_by_team[team] = info["away_supremacy_series"]
 
     write_overview_sheet(wb, team_info, rolling_window)
+    write_xpts_table_sheet(wb, team_info)
+    write_dashboard_sheet(wb, len(teams))
+    match_log = build_match_log(df)
+    write_match_log_sheet(wb, match_log)
+    write_data_quality_sheet(wb, match_log)
     write_home_away_split_sheet(wb, team_info)
 
     avg_for_by_team = {t: team_info[t]["stats"]["avg_for"] for t in teams}
@@ -966,7 +1346,9 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
     # Sheet order: About, League Table, Overview, Home & Away Splits, the
     # grids, Upcoming Fixtures, then teams A-Z (Results Data stays hidden
     # but present).
-    front = [n for n in ("About This Report", "League Table", "Overview", "Home & Away Splits",
+    front = [n for n in ("About This Report", "League Table", "Overview", "xPts Table", "Dashboard",
+                          "Data Quality", "Match Log",
+                          "Home & Away Splits",
                           "Supremacy Delta", "Supremacy Delta (Home)", "Supremacy Delta (Away)",
                           "Total xG Delta", "Upcoming Fixtures") if n in wb.sheetnames]
     order = front + [n for n in wb.sheetnames if n not in front and n != "Results Data"]
@@ -976,7 +1358,8 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
 
     wb.save(output_path)
     extra = " + Upcoming Fixtures" if fixtures_sheet_written else ""
-    print(f"Wrote workbook with {len(teams)} team sheets + League Table + Overview + "
+    print(f"Wrote workbook with {len(teams)} team sheets + League Table + Overview + xPts Table + Dashboard + "
+          f"Data Quality + Match Log + "
           f"Home & Away Splits + Supremacy Delta (+ Home/Away) + Total xG Delta{extra} to {output_path}")
 
 

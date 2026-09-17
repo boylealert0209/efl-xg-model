@@ -1,0 +1,3 @@
+date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
+2026-09-15,Bristol City,Lincoln,1.624,0.98,2.604,True,0.517,0.257,0.226
+2026-09-15,Middlesbrough,Millwall,2.22,0.932,3.152,True,0.659,0.197,0.144
