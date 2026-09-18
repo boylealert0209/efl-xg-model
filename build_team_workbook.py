@@ -16,9 +16,12 @@ any league whose CSVs you point it at (no --league flag needed here):
   - "League Table"       - standard standings (P/W/D/L/GF/GA/GD/Pts) built
                           from every played match in the results file, via
                           formulas against a backing "Results Data" sheet.
-  - "Overview"            - every team's xG form (season average + median +
-                          rolling), via formulas against each team's own
-                          sheet. Sorted by Avg xG Delta (For), best first.
+  - "Overview"            - every team's core season xG/xPts form (a
+                          deliberately narrow at-a-glance summary - see
+                          write_overview_sheet's docstring for what's
+                          left off and why), via formulas against each
+                          team's own sheet. Sorted by Avg xG Delta (For),
+                          best first.
   - "Home & Away Splits"  - league-wide Total/Home/Away breakdown of average
                           + median supremacy, and Total/Home/Away goals for
                           and against, one row per team.
@@ -26,17 +29,22 @@ any league whose CSVs you point it at (no --league flag needed here):
                           match, showing how much their actual xG supremacy
                           (actual for - actual against) beat or missed their
                           pre-match expected supremacy (pre-match for -
-                          pre-match against). Sorted by Avg xG Delta (For),
-                          best first (see the About sheet for why).
+                          pre-match against). Sorted by its own average,
+                          highest first.
   - "Supremacy Delta (Home)" / "Supremacy Delta (Away)" - the same grid,
                           restricted to each team's home-only / away-only
-                          matches.
+                          matches, each sorted by its own (home-only /
+                          away-only) average rather than the main grid's.
   - "Total xG Delta"      - same grid layout, for how much higher/lower
                           scoring (by combined xG) each match was than the
                           pre-match market expected, regardless of who
                           scored it. Colour-scaled (green = higher-scoring
-                          than expected, red = lower) and sorted by average,
-                          highest first.
+                          than expected, red = lower), sorted by average,
+                          highest first, with a Median column at the end.
+  - "xPts Delta"          - same grid layout again, for expected-points
+                          over/under-performance (xPts Delta from
+                          build_deltas.py's add_expected_points) per match.
+                          Sorted by average, highest first.
   - "Upcoming Fixtures"   - only written if a fixtures pre-match xG file is
                           passed with --fixtures. Every fixture the market
                           has odds for right now, ranked by an "expected
@@ -83,7 +91,7 @@ import pandas as pd
 from openpyxl import Workbook
 from openpyxl.comments import Comment
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.formatting.rule import ColorScaleRule
+from openpyxl.formatting.rule import ColorScaleRule, DataBarRule
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.chart import BarChart, Reference
@@ -240,7 +248,11 @@ def autosize_columns(ws: Worksheet, n_cols: int, header_row: int = 1, min_width=
     width_hints = {1-indexed column: [list of the numbers/strings that
     formula will evaluate to]} computed from the same Python data the
     formula reads, since we can't run Excel here to find out what it
-    displays."""
+    displays.
+
+    Also considers the header cell's own text length - a short numeric
+    column (e.g. "-1.53") under a long header ("Home Median") was
+    otherwise sized to the data alone and left the header truncated."""
     max_row = max_row if max_row is not None else ws.max_row
     width_hints = width_hints or {}
     for col in range(1, n_cols + 1):
@@ -254,6 +266,9 @@ def autosize_columns(ws: Worksheet, n_cols: int, header_row: int = 1, min_width=
                  if ws.cell(row=r, column=col).value is not None),
                 default=min_width,
             )
+        header_value = ws.cell(row=header_row, column=col).value
+        if header_value is not None:
+            longest = max(longest, len(str(header_value)))
         ws.column_dimensions[letter].width = max(min_width, min(max_width, longest + 1))
 
 
@@ -529,23 +544,26 @@ def write_team_sheet(wb: Workbook, sheet_name: str, team_df: pd.DataFrame, rolli
         "total_series": total_full.tolist(),
         "home_supremacy_series": supremacy_full[home_mask].tolist(),
         "away_supremacy_series": supremacy_full[away_mask].tolist(),
+        "xpts_delta_series": team_df["xpts_delta"].tolist(),
     }
 
 
 def write_overview_sheet(wb: Workbook, team_info: dict, rolling_window: int):
     """Ranks every team by Avg xG Delta (For), best first - see the About
-    This Report sheet for why "in order of xG for" was read that way."""
+    This Report sheet for why "in order of xG for" was read that way.
+
+    Deliberately narrower than the full picture: medians, the Adjusted
+    current-form pair, goal totals (already on League Table) and Avg
+    Total xG Delta (already its own grid sheet) are left off so this
+    reads as an at-a-glance summary rather than a second data dump -
+    the team tabs and the dedicated grid sheets still have the detail."""
     ws = wb.create_sheet("Overview")
     headers = [
-        "Team", "Matches Played", "Total Goals For", "Total Goals Against",
-        "Avg xG Delta (For)", "Median xG Delta (For)",
-        "Avg xG Delta (Against)", "Median xG Delta (Against)",
-        "Avg xG Delta (For, Adj)", "Median xG Delta (For, Adj)",
-        "Avg xG Delta (Against, Adj)", "Median xG Delta (Against, Adj)",
-        "Avg Supremacy Delta", "Median Supremacy Delta",
-        "Avg Total xG Delta", "Median Total xG Delta",
+        "Team", "Matches Played",
+        "Avg xG Delta (For)", "Avg xG Delta (Against)",
+        "Avg xG Delta (For, Adj)", "Avg xG Delta (Against, Adj)",
+        "Avg Supremacy Delta",
         f"Current Form ({rolling_window}, For)", f"Current Form ({rolling_window}, Against)",
-        f"Current Form ({rolling_window}, For, Adj)", f"Current Form ({rolling_window}, Against, Adj)",
         "Total xPts (Actual)", "Total xPts (Market)", "Avg xPts Delta",
     ]
     ws.append(headers)
@@ -553,25 +571,19 @@ def write_overview_sheet(wb: Workbook, team_info: dict, rolling_window: int):
 
     row_order = sorted(team_info.keys(), key=lambda t: team_info[t]["stats"]["avg_for"], reverse=True)
 
-    stat_keys = ["matches", "gf", "ga", "avg_for", "median_for", "avg_against", "median_against",
-                 "avg_for_adj", "median_for_adj", "avg_against_adj", "median_against_adj",
-                 "avg_supremacy", "median_supremacy", "avg_total_delta", "median_total_delta",
-                 "form_for", "form_against", "form_for_adj", "form_against_adj",
+    stat_keys = ["matches", "avg_for", "avg_against", "avg_for_adj", "avg_against_adj",
+                 "avg_supremacy", "form_for", "form_against",
                  "total_xpts_actual", "total_xpts_market", "avg_xpts_delta"]
     width_hints = {i + 2: [] for i in range(len(stat_keys))}
     for team in row_order:
         info = team_info[team]
         sheet_name, sr, s = info["sheet_name"], info["summary_rows"], info["stats"]
         row_labels = [
-            "Matches played", "Total goals for", "Total goals against",
-            "Avg xG Delta (For)", "Median xG Delta (For)",
-            "Avg xG Delta (Against)", "Median xG Delta (Against)",
-            "Avg xG Delta (For, Adj)", "Median xG Delta (For, Adj)",
-            "Avg xG Delta (Against, Adj)", "Median xG Delta (Against, Adj)",
-            "Avg Supremacy Delta", "Median Supremacy Delta",
-            "Avg Total xG Delta", "Median Total xG Delta",
+            "Matches played",
+            "Avg xG Delta (For)", "Avg xG Delta (Against)",
+            "Avg xG Delta (For, Adj)", "Avg xG Delta (Against, Adj)",
+            "Avg Supremacy Delta",
             f"Current form (last {rolling_window}, For)", f"Current form (last {rolling_window}, Against)",
-            f"Current form (last {rolling_window}, For, Adj)", f"Current form (last {rolling_window}, Against, Adj)",
             "Total xPts (Actual)", "Total xPts (Market)", "Avg xPts Delta",
         ]
         ws.append([team] + [f"='{sheet_name}'!$E${sr[lbl]}" for lbl in row_labels])
@@ -579,7 +591,7 @@ def write_overview_sheet(wb: Workbook, team_info: dict, rolling_window: int):
             width_hints[i + 2].append(s[key])
 
     last_row = ws.max_row
-    decimal_overview_cols = set(range(5, len(headers) + 1))
+    decimal_overview_cols = set(range(3, len(headers) + 1))
     for row in ws.iter_rows(min_row=2, max_row=last_row, max_col=len(headers)):
         for cell in row:
             cell.font = BODY_FONT
@@ -587,17 +599,15 @@ def write_overview_sheet(wb: Workbook, team_info: dict, rolling_window: int):
                 cell.number_format = "0.00"
 
     zero_centered_cols = {
-        5: False, 6: False,    # xG Delta (For) avg/median: higher = better
-        7: True, 8: True,      # xG Delta (Against) avg/median: lower = better
-        9: False, 10: False,   # xG Delta (For, Adj) avg/median: higher = better
-        11: True, 12: True,    # xG Delta (Against, Adj) avg/median: lower = better
-        13: False, 14: False,  # Supremacy Delta avg/median: higher = better
-        15: False, 16: False,  # Total xG Delta avg/median: no "good" direction, just signed
-        17: False, 18: True,   # Current form For/Against
-        19: False, 20: True,   # Current form For/Against, Adj
-        23: False,             # Avg xPts Delta: higher = better, zero-anchored (Total xPts cols 21/22 are
-                                # left uncoloured, like Total Goals For/Against - a plain positive total,
-                                # not a delta, so a zero-anchored scale would just paint everything green)
+        3: False,   # xG Delta (For): higher = better
+        4: True,    # xG Delta (Against): lower = better
+        5: False,   # xG Delta (For, Adj): higher = better
+        6: True,    # xG Delta (Against, Adj): lower = better
+        7: False,   # Supremacy Delta: higher = better
+        8: False, 9: True,   # Current form For/Against
+        12: False,  # Avg xPts Delta: higher = better, zero-anchored (Total xPts cols 10/11 are
+                     # left uncoloured, like Total Goals For/Against - a plain positive total,
+                     # not a delta, so a zero-anchored scale would just paint everything green)
     }
     for col_idx, invert in zero_centered_cols.items():
         col_letter = get_column_letter(col_idx)
@@ -615,15 +625,21 @@ def write_xpts_table_sheet(wb: Workbook, team_info: dict):
     independent-Poisson scoreline model - see build_deltas.py's
     add_expected_points), alongside what the market expected them to earn,
     rather than by the actual (bounce-of-the-ball) results. Pos is by xPts
-    (Actual) descending - there's no goal-difference-style tiebreak here
-    since xPts is already a continuous number, ties are vanishingly rare."""
+    Delta (Total) descending - i.e. who has most over/under-performed the
+    market's own expectation, not just who has the most deserved points
+    outright (a team can rank high on raw xPts just by playing a lot of
+    matches or being a good team the market already rates highly - the
+    delta is the more interesting "who's exceeding expectation" cut).
+    There's no goal-difference-style tiebreak here since the delta is
+    already a continuous number, ties are vanishingly rare."""
     ws = wb.create_sheet("xPts Table")
     headers = ["Pos", "Team", "Matches", "xPts (Actual)", "xPts (Market)", "xPts Delta (Total)"]
     ws.append(headers)
     style_header_row(ws, 1, len(headers))
 
     row_order = sorted(team_info.keys(),
-                        key=lambda t: team_info[t]["stats"]["total_xpts_actual"], reverse=True)
+                        key=lambda t: team_info[t]["stats"]["total_xpts_actual"]
+                        - team_info[t]["stats"]["total_xpts_market"], reverse=True)
 
     width_hints = {3: [], 4: [], 5: [], 6: []}
     for pos, team in enumerate(row_order, start=1):
@@ -727,11 +743,9 @@ def write_match_log_sheet(wb: Workbook, match_log: pd.DataFrame):
             if cell.column in decimal_cols:
                 cell.number_format = "0.00"
 
-    for header in ("Home xG Delta", "Supremacy Delta (Home)", "Total xG Delta"):
+    for header in ("Home xG Delta", "Away xG Delta", "Supremacy Delta (Home)", "Total xG Delta"):
         letter = get_column_letter(headers.index(header) + 1)
         color_scale_zero(ws, f"{letter}2:{letter}{last_row}", invert=False)
-    letter = get_column_letter(headers.index("Away xG Delta") + 1)
-    color_scale_zero(ws, f"{letter}2:{letter}{last_row}", invert=True)
 
     ws.auto_filter.ref = f"A1:{get_column_letter(n_cols)}{last_row}"
     ws.freeze_panes = "A2"
@@ -1068,12 +1082,16 @@ def write_matrix_sheet(wb: Workbook, sheet_name: str, team_info: dict,
                         values_by_team: dict, sort_key_by_team: dict,
                         source_col_header: str, avg_summary_label: str,
                         colored: bool, invert: bool, col_prefix: str = "MW",
-                        formula_row_lookup: bool = True):
+                        formula_row_lookup: bool = True,
+                        median_summary_label: str | None = None):
     """Teams down the left, one column per match (col_prefix + "1", "2",
-    ...), plus an Average column. Row order: DESCENDING by
+    ...), plus an Average column, and - when median_summary_label is
+    given - a Median column at the very end. Row order: DESCENDING by
     sort_key_by_team[team] (not necessarily the same stat as
-    values_by_team - e.g. the Supremacy Delta grid is sorted by Avg xG
-    Delta (For), see the About This Report sheet for why).
+    values_by_team - e.g. the Home/Away Supremacy Delta grids are sorted
+    by their OWN home/away average rather than the Total grid's, so a
+    team can rank differently across the three; see the About This
+    Report sheet).
 
     When formula_row_lookup is True (the full-season grids), every match
     cell is a formula referencing that team's own sheet at a fixed row
@@ -1084,12 +1102,17 @@ def write_matrix_sheet(wb: Workbook, sheet_name: str, team_info: dict,
     scattered among its sheet's rows, not contiguous), so
     formula_row_lookup=False writes the values_by_team numbers directly
     instead - a Python-computed snapshot, not a live formula, same
-    trade-off as the Home/Away split table on each team sheet."""
+    trade-off as the Home/Away split table on each team sheet. The
+    Median column (when requested) is always a formula, referencing the
+    team sheet's own median summary row - the Home/Away grids don't
+    request one since there's no per-side median in the summary block."""
     max_matches = max((len(v) for v in values_by_team.values()), default=0)
     sorted_teams = sorted(values_by_team.keys(), key=lambda t: sort_key_by_team[t], reverse=True)
 
     ws = wb.create_sheet(sheet_name)
     headers = ["Team", "Average"] + [f"{col_prefix}{i}" for i in range(1, max_matches + 1)]
+    if median_summary_label:
+        headers.append("Median")
     ws.append(headers)
     style_header_row(ws, 1, len(headers))
     ws.cell(row=1, column=1).comment = Comment(MW_NOTE, "build_team_workbook.py")
@@ -1098,6 +1121,10 @@ def write_matrix_sheet(wb: Workbook, sheet_name: str, team_info: dict,
     width_hints = {2: [avg_by_team[t] for t in sorted_teams]}
     for mw in range(1, max_matches + 1):
         width_hints[mw + 2] = [v[mw - 1] for v in values_by_team.values() if len(v) >= mw]
+    if median_summary_label:
+        width_hints[len(headers)] = [
+            round(pd.Series(v).median(), 2) for v in values_by_team.values() if v
+        ]
 
     for row_i, team in enumerate(sorted_teams, start=2):
         info = team_info[team]
@@ -1128,6 +1155,13 @@ def write_matrix_sheet(wb: Workbook, sheet_name: str, team_info: dict,
                 cell.number_format = "0.00"
             cell.font = BODY_FONT
 
+        if median_summary_label:
+            median_row = info["summary_rows"][median_summary_label]
+            median_cell = ws.cell(row=row_i, column=len(headers), value=f"='{info['sheet_name']}'!$E${median_row}")
+            median_cell.font = BOLD_FONT
+            median_cell.number_format = "0.00"
+            median_cell.fill = SUMMARY_FILL
+
     last_row = ws.max_row
     last_col_letter = get_column_letter(len(headers))
     if colored and last_row >= 2:
@@ -1153,14 +1187,32 @@ def write_fixtures_sheet(wb: Workbook, fixtures_df: pd.DataFrame, team_info: dic
 
     where Market Pre-Match Supremacy (Home) = xg_pre_market_home -
     xg_pre_market_away, i.e. what the odds alone say about this specific
-    match. A team with no season data yet (e.g. just promoted, or not yet
-    covered by team_match_deltas) contributes 0 to its side of the
+    match. Expected TOTAL goals uses the same blending idea, but summed
+    rather than subtracted - a high-scoring team pushes the total up
+    whichever side of the fixture it's on:
+
+        Combined Expected Total Goals
+          = Market Pre-Match Total xG (both sides combined)
+            + Home Team's Season Avg Total xG Delta
+            + Away Team's Season Avg Total xG Delta
+
+    A team with no season data yet (e.g. just promoted, or not yet
+    covered by team_match_deltas) contributes 0 to its side of either
     adjustment and is flagged in the Notes column, rather than the whole
-    row being dropped."""
+    row being dropped.
+
+    Both combined estimates get a data bar (not just a colour scale) so
+    the size and direction of the lean is visible without reading the
+    number - a longer bar is a stronger lean, and (Excel/Sheets' own
+    behaviour, not something set here) a column whose values cross zero
+    gets bars in both directions from a centre axis automatically."""
     ws = wb.create_sheet("Upcoming Fixtures")
-    headers = ["Date", "Home Team", "Away Team", "Market Pre-Match Supremacy (Home)",
-               "Home Team Season Avg Supremacy", "Away Team Season Avg Supremacy",
-               "Combined Expected Supremacy (Home)", "Notes"]
+    headers = ["Date", "Home Team", "Away Team",
+               "Market Pre-Match Supremacy (Home)", "Home Team Season Avg Supremacy",
+               "Away Team Season Avg Supremacy", "Combined Expected Supremacy (Home)",
+               "Market Pre-Match Total xG", "Home Team Season Avg Total xG Delta",
+               "Away Team Season Avg Total xG Delta", "Combined Expected Total Goals",
+               "Notes"]
     ws.append(headers)
     style_header_row(ws, 1, len(headers))
 
@@ -1169,17 +1221,21 @@ def write_fixtures_sheet(wb: Workbook, fixtures_df: pd.DataFrame, team_info: dic
         home_norm = normalise_name(r["home_team"], TEAM_NAME_MAP)
         away_norm = normalise_name(r["away_team"], TEAM_NAME_MAP)
         market_supremacy = round(r["xg_pre_market_home"] - r["xg_pre_market_away"], 2)
+        market_total = round(r["xg_pre_market_home"] + r["xg_pre_market_away"], 2)
 
         notes = []
         home_stats = team_info.get(home_norm, {}).get("stats")
         away_stats = team_info.get(away_norm, {}).get("stats")
-        home_avg = home_stats["avg_supremacy"] if home_stats else 0.0
-        away_avg = away_stats["avg_supremacy"] if away_stats else 0.0
+        home_avg_sup = home_stats["avg_supremacy"] if home_stats else 0.0
+        away_avg_sup = away_stats["avg_supremacy"] if away_stats else 0.0
+        home_avg_total = home_stats["avg_total_delta"] if home_stats else 0.0
+        away_avg_total = away_stats["avg_total_delta"] if away_stats else 0.0
         if not home_stats:
             notes.append(f"No season data yet for {home_norm}")
         if not away_stats:
             notes.append(f"No season data yet for {away_norm}")
-        combined = round(market_supremacy + home_avg - away_avg, 2)
+        combined_supremacy = round(market_supremacy + home_avg_sup - away_avg_sup, 2)
+        combined_total = round(market_total + home_avg_total + away_avg_total, 2)
 
         date_val = r.get("date")
         try:
@@ -1187,8 +1243,9 @@ def write_fixtures_sheet(wb: Workbook, fixtures_df: pd.DataFrame, team_info: dic
         except (ValueError, TypeError):
             date_str = str(date_val)
 
-        rows.append((date_str, home_norm, away_norm, market_supremacy, home_avg, away_avg,
-                     combined, "; ".join(notes)))
+        rows.append((date_str, home_norm, away_norm, market_supremacy, home_avg_sup, away_avg_sup,
+                     combined_supremacy, market_total, home_avg_total, away_avg_total, combined_total,
+                     "; ".join(notes)))
 
     rows.sort(key=lambda row: row[6], reverse=True)
 
@@ -1199,7 +1256,7 @@ def write_fixtures_sheet(wb: Workbook, fixtures_df: pd.DataFrame, team_info: dic
             width_hints[i].append(v)
 
     last_row = ws.max_row
-    decimal_cols = {4, 5, 6, 7}
+    decimal_cols = {4, 5, 6, 7, 8, 9, 10, 11}
     for row in ws.iter_rows(min_row=2, max_row=last_row, max_col=len(headers)):
         for cell in row:
             cell.font = BODY_FONT
@@ -1207,7 +1264,20 @@ def write_fixtures_sheet(wb: Workbook, fixtures_df: pd.DataFrame, team_info: dic
                 cell.number_format = "0.00"
 
     if last_row >= 2:
+        # Supremacy is signed (home-favoured vs away-favoured), so it keeps
+        # the red/white/green colour scale underneath a gold bar - the
+        # colour gives direction at a glance, the bar gives magnitude.
+        # Total goals has no "good" direction, just a bigger/smaller
+        # number, so it gets a plain bar with no colour scale.
+        ws.conditional_formatting.add(
+            f"G2:G{last_row}",
+            DataBarRule(start_type="min", end_type="max", color="C9A227", showValue=True),
+        )
         color_scale_zero(ws, f"G2:G{last_row}", invert=False)
+        ws.conditional_formatting.add(
+            f"K2:K{last_row}",
+            DataBarRule(start_type="min", end_type="max", color="6FA588", showValue=True),
+        )
 
     ws.freeze_panes = "A2"
     autosize_columns(ws, len(headers), width_hints=width_hints, max_width=40)
@@ -1225,10 +1295,12 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
     paragraphs = [
         ("Sheets in this workbook", BOLD_FONT),
         ("League Table - standard standings from every played match.", BODY_FONT),
-        ("Overview - every team's season xG form, sorted by Avg xG Delta (For), best first.", BODY_FONT),
-        ("xPts Table - teams ranked by season-total expected points (deserved points from actual xG, plus what "
-         "the market expected), a \"truer\" table than the real one below since it's driven by chance quality "
-         "rather than which chances actually went in.", BODY_FONT),
+        ("Overview - a deliberately narrow at-a-glance summary of each team's core xG/xPts form, sorted by Avg xG "
+         "Delta (For), best first. Medians, adjusted current form, and a couple of stats already shown elsewhere "
+         "are left off - see the team tabs and the dedicated grid sheets for the full detail.", BODY_FONT),
+        ("xPts Table - teams ranked by season-total xPts Delta (actual deserved points minus what the market "
+         "expected), highest over-performance first - a \"truer\" table than the real one below since it's driven "
+         "by chance quality rather than which chances actually went in.", BODY_FONT),
         ("Dashboard - three league-wide charts (xG Delta For, Supremacy Delta, xPts Actual vs Market) so patterns "
          "are visible at a glance instead of scrolling through team tabs.", BODY_FONT),
         ("Data Quality - flags fixtures with missing/negative xG or goals, or suspicious exact-0.00 xG on both "
@@ -1236,25 +1308,29 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
         ("Match Log - the single master data table: one row per fixture (not per team) with every core stat, "
          "and an AutoFilter so you can filter by team/venue without hunting through team tabs.", BODY_FONT),
         ("Home & Away Splits - Total/Home/Away average and median supremacy, and Total/Home/Away goals, for every team.", BODY_FONT),
-        ("Supremacy Delta / (Home) / (Away) - match-by-match grids of actual vs. expected xG supremacy.", BODY_FONT),
-        ("Total xG Delta - match-by-match grid of how much higher/lower-scoring each match was than the market expected.", BODY_FONT),
-        ("Upcoming Fixtures - only present if fixture data was supplied; see below for how it's ranked.", BODY_FONT),
+        ("Supremacy Delta / (Home) / (Away) - match-by-match grids of actual vs. expected xG supremacy, each "
+         "sorted by its own average, highest first.", BODY_FONT),
+        ("Total xG Delta - match-by-match grid of how much higher/lower-scoring each match was than the market "
+         "expected, sorted by its own average, with a Median column at the end.", BODY_FONT),
+        ("xPts Delta - match-by-match grid of expected-points over/under-performance, sorted by its own average.", BODY_FONT),
+        ("Upcoming Fixtures - ranked by expected supremacy (see below for how); also estimates each fixture's "
+         "total goals, with both estimates shown as in-cell data bars for an at-a-glance visual read.", BODY_FONT),
         ("One tab per team - full match log, season summary (average AND median of every delta stat), and a Home/Away split table.", BODY_FONT),
         ("", BODY_FONT),
         ("Judgement calls made where the brief was ambiguous", BOLD_FONT),
-        ("\u2022 \"In order of xG for\": Overview and the Supremacy Delta grid are both sorted by Avg xG Delta (For), "
-         "highest (most attacking overperformance) first - not by average Supremacy Delta, which was the grid's "
-         "original sort key.", BODY_FONT),
-        ("\u2022 \"Total xG data sheet ... order by average\": Total xG Delta is sorted by its own average, "
-         "highest (most above the market's pre-match total-goals expectation) first.", BODY_FONT),
-        ("\u2022 Conditional formatting on every delta-style column is now zero-anchored (green above 0, red below 0, "
+        ("\u2022 \"In order of xG for\": Overview is sorted by Avg xG Delta (For), highest (most attacking "
+         "overperformance) first. The Supremacy Delta / Total xG Delta / xPts Delta grids are each sorted by "
+         "their OWN average instead, highest first - including the Home-only and Away-only Supremacy grids, "
+         "which use their own home-only / away-only average rather than the main grid's.", BODY_FONT),
+        ("\u2022 Conditional formatting on every delta-style column is zero-anchored (green above 0, red below 0, "
          "white at exactly 0) rather than relative to that column's own min/max/median - 0 has a real meaning here "
          "(\"exactly as the market expected\"), so it's a fixed reference point rather than a moving one.", BODY_FONT),
         ("\u2022 Upcoming Fixtures' \"Combined Expected Supremacy (Home)\" = the market's own pre-match supremacy for "
          "that specific fixture, adjusted by how much each side has been over/under-performing its own expectation "
-         "all season (home team's season average added, away team's season average subtracted). This is a simple, "
-         "transparent blend - not a fitted model - so treat it as a way to surface interesting fixtures, not a "
-         "prediction.", BODY_FONT),
+         "all season (home team's season average added, away team's season average subtracted). \"Combined "
+         "Expected Total Goals\" uses the same blend but summed rather than subtracted, since either side being "
+         "high-scoring pushes the total up. Both are simple, transparent blends - not a fitted model - so treat "
+         "them as a way to surface interesting fixtures, not a prediction.", BODY_FONT),
         ("\u2022 xPts (expected points) use an independent-Poisson scoreline model - each side's goals treated as "
          "Poisson-distributed around its xG, win/draw/loss probabilities computed from that, then "
          "3\u00d7P(win) + 1\u00d7P(draw). It's the standard, simple way to turn two xG numbers into a points "
@@ -1268,7 +1344,14 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
         cell = ws.cell(row=r, column=1, value=text)
         cell.font = font
         cell.alignment = Alignment(wrap_text=True, vertical="top")
-        ws.row_dimensions[r].height = 30 if text else 8
+        # Column A is 100 units wide (~90 characters per wrapped line at
+        # this font size) - estimate how many lines this text will wrap
+        # to and size the row for that, rather than a fixed height that
+        # only fit the (shorter) original paragraphs and let newer, longer
+        # ones overlap the row below.
+        chars_per_line = 90
+        n_lines = max(1, -(-len(text) // chars_per_line)) if text else 1  # ceil division
+        ws.row_dimensions[r].height = max(30, n_lines * 15) if text else 8
         r += 1
 
     if league_note:
@@ -1280,7 +1363,15 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
 
 
 def main(input_path, results_path, output_path, rolling_window, fixtures_path=None, league_note=None):
-    df = pd.read_csv(input_path, parse_dates=["date"])
+    # format="mixed": defensive, not strictly needed here (build_deltas.py
+    # writes this file with dates already normalised to plain YYYY-MM-DD,
+    # a single consistent format) - but it's what actually broke
+    # build_deltas.py's own date read on raw FotMob data (see the comment
+    # in load_and_merge), so applying it here too costs nothing and rules
+    # out the same failure mode if this file is ever hand-edited or
+    # produced by something else.
+    df = pd.read_csv(input_path)
+    df["date"] = pd.to_datetime(df["date"], format="mixed", utc=True).dt.tz_localize(None)
     teams = sorted(df["team"].unique())
 
     wb = Workbook()
@@ -1298,6 +1389,7 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
     team_info = {}
     supremacy_by_team, total_delta_by_team = {}, {}
     home_supremacy_by_team, away_supremacy_by_team = {}, {}
+    xpts_delta_by_team = {}
     for team in teams:
         sheet_name = safe_sheet_name(team, used_names)
         team_df = df[df["team"] == team].sort_values("date")
@@ -1308,6 +1400,7 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
         total_delta_by_team[team] = info["total_series"]
         home_supremacy_by_team[team] = info["home_supremacy_series"]
         away_supremacy_by_team[team] = info["away_supremacy_series"]
+        xpts_delta_by_team[team] = info["xpts_delta_series"]
 
     write_overview_sheet(wb, team_info, rolling_window)
     write_xpts_table_sheet(wb, team_info)
@@ -1317,21 +1410,28 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
     write_data_quality_sheet(wb, match_log)
     write_home_away_split_sheet(wb, team_info)
 
-    avg_for_by_team = {t: team_info[t]["stats"]["avg_for"] for t in teams}
     avg_total_by_team = {t: team_info[t]["stats"]["avg_total_delta"] for t in teams}
-    write_matrix_sheet(wb, "Supremacy Delta", team_info, supremacy_by_team, sort_key_by_team=avg_for_by_team,
+    avg_supremacy_by_team = {t: team_info[t]["stats"]["avg_supremacy"] for t in teams}
+    home_avg_supremacy_by_team = {t: team_info[t]["stats"]["home_avg_supremacy"] for t in teams}
+    away_avg_supremacy_by_team = {t: team_info[t]["stats"]["away_avg_supremacy"] for t in teams}
+    avg_xpts_delta_by_team = {t: team_info[t]["stats"]["avg_xpts_delta"] for t in teams}
+    write_matrix_sheet(wb, "Supremacy Delta", team_info, supremacy_by_team,
+                        sort_key_by_team=avg_supremacy_by_team,
                         source_col_header="Supremacy Delta", avg_summary_label="Avg Supremacy Delta",
                         colored=True, invert=False)
     write_matrix_sheet(wb, "Supremacy Delta (Home)", team_info, home_supremacy_by_team,
-                        sort_key_by_team=avg_for_by_team, source_col_header="Supremacy Delta",
+                        sort_key_by_team=home_avg_supremacy_by_team, source_col_header="Supremacy Delta",
                         avg_summary_label="Avg Supremacy Delta", colored=True, invert=False,
                         col_prefix="H", formula_row_lookup=False)
     write_matrix_sheet(wb, "Supremacy Delta (Away)", team_info, away_supremacy_by_team,
-                        sort_key_by_team=avg_for_by_team, source_col_header="Supremacy Delta",
+                        sort_key_by_team=away_avg_supremacy_by_team, source_col_header="Supremacy Delta",
                         avg_summary_label="Avg Supremacy Delta", colored=True, invert=False,
                         col_prefix="A", formula_row_lookup=False)
     write_matrix_sheet(wb, "Total xG Delta", team_info, total_delta_by_team, sort_key_by_team=avg_total_by_team,
                         source_col_header="Match Total xG Delta", avg_summary_label="Avg Total xG Delta",
+                        colored=True, invert=False, median_summary_label="Median Total xG Delta")
+    write_matrix_sheet(wb, "xPts Delta", team_info, xpts_delta_by_team, sort_key_by_team=avg_xpts_delta_by_team,
+                        source_col_header="xPts Delta", avg_summary_label="Avg xPts Delta",
                         colored=True, invert=False)
 
     fixtures_sheet_written = False
@@ -1350,7 +1450,7 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
                           "Data Quality", "Match Log",
                           "Home & Away Splits",
                           "Supremacy Delta", "Supremacy Delta (Home)", "Supremacy Delta (Away)",
-                          "Total xG Delta", "Upcoming Fixtures") if n in wb.sheetnames]
+                          "Total xG Delta", "xPts Delta", "Upcoming Fixtures") if n in wb.sheetnames]
     order = front + [n for n in wb.sheetnames if n not in front and n != "Results Data"]
     if "Results Data" in wb.sheetnames:
         order.append("Results Data")
@@ -1360,7 +1460,7 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
     extra = " + Upcoming Fixtures" if fixtures_sheet_written else ""
     print(f"Wrote workbook with {len(teams)} team sheets + League Table + Overview + xPts Table + Dashboard + "
           f"Data Quality + Match Log + "
-          f"Home & Away Splits + Supremacy Delta (+ Home/Away) + Total xG Delta{extra} to {output_path}")
+          f"Home & Away Splits + Supremacy Delta (+ Home/Away) + Total xG Delta + xPts Delta{extra} to {output_path}")
 
 
 if __name__ == "__main__":
