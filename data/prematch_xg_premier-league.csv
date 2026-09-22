@@ -39,3 +39,13 @@ date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_tot
 2026-09-13,Coventry,Brighton,1.145,1.723,2.868,True,0.252,0.245,0.503
 2026-09-13,Man United,Man City,1.419,1.798,3.217,True,0.294,0.251,0.455
 2026-09-14,Leeds,Newcastle,1.485,1.332,2.817,True,0.399,0.271,0.33
+2026-09-18,Brentford,Chelsea,1.625,1.66,3.285,True,0.369,0.247,0.384
+2026-09-19,Tottenham,Aston Villa,1.631,1.15,2.781,True,0.473,0.271,0.256
+2026-09-19,Brighton,Arsenal,1.0,1.87,2.87,True,0.19,0.243,0.567
+2026-09-19,Everton,Ipswich,1.822,1.065,2.886,True,0.541,0.249,0.21
+2026-09-19,Newcastle,Hull,2.02,1.048,3.068,True,0.592,0.219,0.189
+2026-09-19,Nott'm Forest,Coventry,1.914,0.906,2.82,True,0.6,0.236,0.164
+2026-09-20,Bournemouth,Liverpool,1.427,1.794,3.221,True,0.297,0.25,0.453
+2026-09-20,Leeds,Crystal Palace,1.826,1.02,2.846,True,0.553,0.245,0.201
+2026-09-20,Man City,Sunderland,2.355,0.755,3.11,True,0.724,0.171,0.105
+2026-09-20,Fulham,Man United,1.321,1.798,3.119,True,0.272,0.251,0.477
