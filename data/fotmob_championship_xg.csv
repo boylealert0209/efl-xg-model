@@ -27,14 +27,14 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-08-29T11:30:00Z,Derby,Swansea,0.7,3.0,0,3
 2026-08-29T11:30:00Z,Middlesbrough,West Brom,2.55,1.32,3,1
 2026-08-29T11:30:00Z,Wolves,Stoke,2.66,0.83,4,1
-2026-08-29T14:00:00Z,Norwich,Burnley,2.3,1.38,4,1
-2026-08-29T14:00:00Z,Charlton,Preston,0.74,1.32,1,0
-2026-08-29T14:00:00Z,Southampton,Millwall,3.62,1.35,5,1
-2026-08-29T14:00:00Z,Watford,West Ham,1.6,0.89,1,1
-2026-08-29T14:00:00Z,Blackburn,QPR,0.92,1.34,1,2
-2026-08-29T14:00:00Z,Cardiff,Sheff Utd,2.24,1.28,2,2
 2026-08-29T14:00:00Z,Bristol City,Portsmouth,0.61,1.37,2,1
+2026-08-29T14:00:00Z,Cardiff,Sheff Utd,2.24,1.28,2,2
+2026-08-29T14:00:00Z,Blackburn,QPR,0.92,1.34,1,2
 2026-08-29T14:00:00Z,Bolton,Lincoln,1.89,1.32,0,1
+2026-08-29T14:00:00Z,Southampton,Millwall,3.62,1.35,5,1
+2026-08-29T14:00:00Z,Charlton,Preston,0.74,1.32,1,0
+2026-08-29T14:00:00Z,Norwich,Burnley,2.3,1.38,4,1
+2026-08-29T14:00:00Z,Watford,West Ham,1.6,0.89,1,1
 2026-09-01T18:45:00Z,Lincoln,Blackburn,1.46,0.24,0,0
 2026-09-01T18:45:00Z,Portsmouth,Derby,0.84,0.55,0,2
 2026-09-01T18:45:00Z,Preston,Bristol City,1.91,1.78,1,3
@@ -43,8 +43,8 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-09-01T18:45:00Z,Swansea,Watford,2.71,0.88,2,0
 2026-09-01T19:00:00Z,Birmingham,Southampton,1.55,1.02,1,1
 2026-09-01T19:00:00Z,Stoke,Norwich,0.58,1.44,1,0
-2026-09-02T18:45:00Z,QPR,Cardiff,2.75,0.57,2,1
 2026-09-02T18:45:00Z,Millwall,Wrexham,0.23,0.88,0,3
+2026-09-02T18:45:00Z,QPR,Cardiff,2.75,0.57,2,1
 2026-09-02T18:45:00Z,West Brom,Charlton,0.6,0.39,1,1
 2026-09-02T19:00:00Z,Burnley,Middlesbrough,0.68,0.97,1,1
 2026-09-05T11:30:00Z,Preston,Blackburn,2.19,1.09,2,1
@@ -69,9 +69,9 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-09-09T18:45:00Z,Norwich,Birmingham,1.01,1.63,2,1
 2026-09-09T19:00:00Z,Charlton,QPR,0.48,1.1,0,0
 2026-09-11T19:00:00Z,West Ham,Wrexham,2.96,0.44,6,0
-2026-09-12T11:30:00Z,West Brom,QPR,1.22,0.62,1,1
-2026-09-12T11:30:00Z,Derby,Birmingham,1.11,3.17,1,2
 2026-09-12T11:30:00Z,Bolton,Cardiff,0.48,1.79,1,0
+2026-09-12T11:30:00Z,Derby,Birmingham,1.11,3.17,1,2
+2026-09-12T11:30:00Z,West Brom,QPR,1.22,0.62,1,1
 2026-09-12T14:00:00Z,Blackburn,Millwall,1.23,1.63,3,1
 2026-09-12T14:00:00Z,Charlton,Portsmouth,0.82,0.4,0,0
 2026-09-12T14:00:00Z,Middlesbrough,Norwich,2.38,1.76,4,3
