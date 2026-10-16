@@ -1,1 +1,11 @@
 date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
+2026-10-17,Everton,Chelsea,1.313,1.673,2.986,True,0.297,0.25,0.453
+2026-10-17,Brentford,Liverpool,1.659,1.464,3.123,True,0.415,0.254,0.331
+2026-10-17,Fulham,Hull,1.827,1.051,2.878,True,0.547,0.243,0.21
+2026-10-17,Man City,Ipswich,2.757,0.792,3.549,True,0.778,0.136,0.086
+2026-10-17,Newcastle,Aston Villa,1.65,1.408,3.058,True,0.421,0.263,0.316
+2026-10-18,Bournemouth,Sunderland,1.609,1.168,2.777,True,0.464,0.272,0.264
+2026-10-18,Brighton,Crystal Palace,2.123,1.026,3.148,True,0.618,0.21,0.172
+2026-10-18,Leeds,Man United,1.588,1.412,3.0,True,0.406,0.265,0.329
+2026-10-18,Nott'm Forest,Arsenal,0.845,1.83,2.676,True,0.159,0.245,0.596
+2026-10-19,Tottenham,Coventry,2.191,0.92,3.11,True,0.654,0.211,0.135
