@@ -94,7 +94,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.formatting.rule import ColorScaleRule, DataBarRule
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.chart import BarChart, Reference
+from openpyxl.chart import BarChart, LineChart, Reference
 
 # Reuse the same team-name normalisation as build_deltas.py, so every sheet
 # (built from E1.csv-style naming, e.g. "QPR") uses the same names as the
@@ -118,6 +118,22 @@ THIN_BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 GREEN = "63BE7B"
 RED = "F8696B"
 WHITE = "FFFFFF"
+AMBER = "FFC000"
+GREY = "D9D9D9"
+
+# Win / draw / defeat fills for the closing-odds table on each team tab.
+RESULT_FILLS = {
+    "W": PatternFill(start_color=GREEN, end_color=GREEN, fill_type="solid"),
+    "D": PatternFill(start_color=AMBER, end_color=AMBER, fill_type="solid"),
+    "L": PatternFill(start_color=RED, end_color=RED, fill_type="solid"),
+}
+GREY_FILL = PatternFill(start_color=GREY, end_color=GREY, fill_type="solid")
+
+# Closing-odds columns in the football-data.co.uk results files, in order of
+# preference: Pinnacle closing (the sharpest market), then the market-average
+# closing price, then Bet365 closing. The first pair with both a home and an
+# away price on a given row is used for that row.
+CLOSING_ODDS_COLS = [("PPCH", "PPCD", "PPCA"), ("AvgCH", "AvgCD", "AvgCA"), ("B365CH", "B365CD", "B365CA")]
 
 # Column headers for each team's match-log table, in order, mapped to the
 # team_match_deltas.csv column they come from. "supremacy_delta" and
@@ -298,7 +314,8 @@ def stat_block(series: pd.Series) -> dict:
     return {"avg": round(float(series.mean()), 2), "median": round(float(series.median()), 2)}
 
 
-def write_team_sheet(wb: Workbook, sheet_name: str, team_df: pd.DataFrame, rolling_window: int):
+def write_team_sheet(wb: Workbook, sheet_name: str, team_df: pd.DataFrame, rolling_window: int,
+                     odds_lookup: dict | None = None, table_order: list | None = None):
     """Returns a dict of everything the Overview/Home & Away Splits/grid
     sheets need to reference this team's data by formula or by value:
         sheet_name, n_matches, col_letter (header -> column letter),
@@ -493,6 +510,11 @@ def write_team_sheet(wb: Workbook, sheet_name: str, team_df: pd.DataFrame, rolli
         total_delta_col: total_delta_hints,
     })
     polish_sheet(ws, header_row=1, first_data_row=2, last_data_row=last_row, n_cols=n_cols)
+
+    # Goals-vs-expected chart, over/under-expected counts and the closing-odds
+    # table - all to the right of the match table (see write_team_extras).
+    write_team_extras(ws, str(team_df["team"].iloc[0]), n_cols, n_matches, last_row, col_letter,
+                       odds_lookup, table_order)
 
     stats = {
         "matches": n_matches,
@@ -996,11 +1018,11 @@ def write_results_data_sheet(wb: Workbook, results_df: pd.DataFrame):
     return ws.max_row  # last data row
 
 
-def write_league_table_sheet(wb: Workbook, results_df: pd.DataFrame, last_results_row: int):
-    """Standard standings (P/W/D/L/GF/GA/GD/Pts), row order decided in
-    Python (points, then goal difference, then goals for - the standard
-    tie-break) but every number a formula against the 'Results Data' sheet,
-    so it stays correct if that data is edited."""
+def compute_standings(results_df: pd.DataFrame) -> pd.DataFrame:
+    """League standings (points, then goal difference, then goals for) from the
+    played-match results. Shared by the League Table sheet, the League Summary
+    sheet and each team tab's closing-odds table so all three always agree on
+    the order."""
     home = results_df.rename(columns={"HomeTeam": "team", "AwayTeam": "opponent",
                                        "FTHG": "gf", "FTAG": "ga"})[["team", "opponent", "gf", "ga"]]
     away = results_df.rename(columns={"AwayTeam": "team", "HomeTeam": "opponent",
@@ -1019,6 +1041,15 @@ def write_league_table_sheet(wb: Workbook, results_df: pd.DataFrame, last_result
     )
     standings["gd"] = standings["gf"] - standings["ga"]
     standings = standings.sort_values(["points", "gd", "gf"], ascending=False).reset_index(drop=True)
+    return standings
+
+
+def write_league_table_sheet(wb: Workbook, results_df: pd.DataFrame, last_results_row: int):
+    """Standard standings (P/W/D/L/GF/GA/GD/Pts), row order decided in
+    Python (points, then goal difference, then goals for - the standard
+    tie-break) but every number a formula against the 'Results Data' sheet,
+    so it stays correct if that data is edited."""
+    standings = compute_standings(results_df)
 
     ws = wb.create_sheet("League Table")
     headers = ["Pos", "Team", "P", "W", "D", "L", "GF", "GA", "GD", "Pts"]
@@ -1285,6 +1316,290 @@ def write_fixtures_sheet(wb: Workbook, fixtures_df: pd.DataFrame, team_info: dic
     return ws
 
 
+def build_odds_lookup(results_df: pd.DataFrame) -> dict:
+    """{(home_team, away_team): {...}} for every played match, with names
+    normalised the same way as the team tabs. Holds the closing home/draw/away
+    prices (first available source in CLOSING_ODDS_COLS) plus the score, so a
+    team tab can show its own win price for each fixture and colour it by the
+    result."""
+    lookup = {}
+    for _, r in results_df.iterrows():
+        home = normalise_name(r["HomeTeam"], TEAM_NAME_MAP)
+        away = normalise_name(r["AwayTeam"], TEAM_NAME_MAP)
+        odds = (None, None, None)
+        for h_col, d_col, a_col in CLOSING_ODDS_COLS:
+            if h_col in r.index and a_col in r.index and pd.notna(r[h_col]) and pd.notna(r[a_col]):
+                odds = (float(r[h_col]), float(r[d_col]) if d_col in r.index and pd.notna(r[d_col]) else None,
+                        float(r[a_col]))
+                break
+        lookup[(home, away)] = {"home_odds": odds[0], "draw_odds": odds[1], "away_odds": odds[2],
+                                "hg": int(r["FTHG"]), "ag": int(r["FTAG"])}
+    return lookup
+
+
+def _hdr(cell):
+    cell.font = HEADER_FONT
+    cell.fill = HEADER_FILL
+    cell.alignment = Alignment(horizontal="center", wrap_text=True, vertical="center")
+    cell.border = THIN_BORDER
+
+
+def write_team_extras(ws: Worksheet, team: str, n_cols: int, n_matches: int, last_row: int,
+                      col_letter: dict, odds_lookup: dict | None, table_order: list | None):
+    """Everything added to the right of a team tab's match table (one blank
+    column after it):
+
+      1. Over/under-expected game counts (xG and goals, for and against).
+      2. A separate gameweek table (Goals For, Goals Against shown as a
+         negative, and the pre-match expected goals for and against - kept
+         apart from the actual-xG columns in the main match table).
+      3. A bar chart off that table: goals for ABOVE the zero line, goals
+         against BELOW it, one pair of bars per gameweek (MW1, MW2...), with a
+         dashed line across each side showing what was expected.
+      4. A league-table-ordered closing-odds table: this team's own closing
+         price to win each fixture, split into the home fixture and the away
+         fixture against each opponent, filled green (won) / amber (drew) /
+         red (lost).
+
+    \"Expected\" = the pre-match market xG (the goals the odds implied for each
+    side) - the same numbers as the \"xG Pre-Match\" columns of the match table.
+    Every number here is a formula pointing back at the match table, apart
+    from the closing odds (raw data from the results file) and the results
+    colours (static fills - the whole workbook is rebuilt each run)."""
+    c0 = n_cols + 2
+    L = get_column_letter
+    gf, ga = col_letter["Goals For"], col_letter["Goals Against"]
+    pf, pa = col_letter["xG Pre-Match (For)"], col_letter["xG Pre-Match (Against)"]
+    dxf, dxa = col_letter["xG Delta (For)"], col_letter["xG Delta (Against)"]
+
+    def rng(letter):
+        return f"${letter}$2:${letter}${last_row}"
+
+    # --- title + counts ---------------------------------------------------
+    ws.cell(row=1, column=c0, value="Goals vs expected").font = TITLE_FONT
+    ws.cell(row=2, column=c0, value="Expected = the pre-match market xG (what the odds implied) for each side.").font = SUBTITLE_FONT
+    for i, h in enumerate(["Games vs expected", "Above", "Below"]):
+        _hdr(ws.cell(row=3, column=c0 + i, value=h))
+    count_rows = [
+        ("xG For vs expected", f'=COUNTIF({rng(dxf)},">0")', f'=COUNTIF({rng(dxf)},"<0")'),
+        ("xG Against vs expected", f'=COUNTIF({rng(dxa)},">0")', f'=COUNTIF({rng(dxa)},"<0")'),
+        ("Goals For vs expected", f"=SUMPRODUCT(--({rng(gf)}>{rng(pf)}))", f"=SUMPRODUCT(--({rng(gf)}<{rng(pf)}))"),
+        ("Goals Against vs expected", f"=SUMPRODUCT(--({rng(ga)}>{rng(pa)}))", f"=SUMPRODUCT(--({rng(ga)}<{rng(pa)}))"),
+    ]
+    for i, (label, above, below) in enumerate(count_rows):
+        r = 4 + i
+        for j, v in enumerate((label, above, below)):
+            cell = ws.cell(row=r, column=c0 + j, value=v)
+            cell.font = BODY_FONT
+            cell.border = THIN_BORDER
+            if j:
+                cell.alignment = Alignment(horizontal="center")
+    ws.cell(row=8, column=c0,
+            value="For: Above = beat expectation. Against: Above = conceded more than expected (worse).").font = SUBTITLE_FONT
+
+    # --- gameweek table (chart source) ------------------------------------
+    hr = 10
+    ws.cell(row=hr - 1, column=c0,
+            value="Chart data: Against figures are stored as negatives so they plot below the zero line.").font = SUBTITLE_FONT
+    for i, h in enumerate(["Gameweek", "Goals For", "Goals Against", "Expected Goals For", "Expected Goals Against"]):
+        _hdr(ws.cell(row=hr, column=c0 + i, value=h))
+    ws.row_dimensions[hr].height = 30
+    for i in range(n_matches):
+        r, mr = hr + 1 + i, 2 + i
+        vals = [f"MW{i + 1}", f"={gf}{mr}", f"=-{ga}{mr}", f"={pf}{mr}", f"=-{pa}{mr}"]
+        for j, v in enumerate(vals):
+            cell = ws.cell(row=r, column=c0 + j, value=v)
+            cell.font = BODY_FONT
+            cell.border = THIN_BORDER
+            if j:
+                cell.number_format = "0;-0;0" if j in (1, 2) else "0.00"
+                cell.alignment = Alignment(horizontal="center")
+
+    # --- chart --------------------------------------------------------------
+    bar = BarChart()
+    bar.type = "col"
+    bar.grouping = "clustered"
+    bar.overlap = 100  # goals for and against share one x position, one up, one down
+    bar.gapWidth = 60
+    bar.add_data(Reference(ws, min_col=c0 + 1, max_col=c0 + 2, min_row=hr, max_row=hr + n_matches),
+                 titles_from_data=True)
+    cats = Reference(ws, min_col=c0, min_row=hr + 1, max_row=hr + n_matches)
+    bar.set_categories(cats)
+    bar.series[0].graphicalProperties.solidFill = "5B9BD5"
+    bar.series[1].graphicalProperties.solidFill = "ED7D31"
+
+    line = LineChart()
+    line.add_data(Reference(ws, min_col=c0 + 3, max_col=c0 + 4, min_row=hr, max_row=hr + n_matches),
+                  titles_from_data=True)
+    line.set_categories(cats)
+    for s_, colour in zip(line.series, ("000000", "595959")):
+        s_.graphicalProperties.line.solidFill = colour
+        s_.graphicalProperties.line.width = 22000
+        s_.graphicalProperties.line.dashStyle = "dash"
+        s_.marker.symbol = "circle"
+        s_.marker.size = 6
+        s_.marker.graphicalProperties.solidFill = colour
+        s_.marker.graphicalProperties.line.solidFill = colour
+        s_.smooth = False
+
+    bar.title = f"{team}: goals for (above) and against (below) vs expected"
+    bar.y_axis.title = "Goals"
+    bar.y_axis.number_format = "0;0;0"  # show goals against as a positive count below the axis
+    bar.x_axis.tickLblPos = "low"       # gameweek labels along the bottom, not on the zero line
+    bar.x_axis.delete = False
+    bar.y_axis.delete = False
+    bar.legend.position = "b"
+    bar += line
+    bar.height, bar.width = 10, 26
+    chart_col = c0 + 6
+    ws.add_chart(bar, f"{L(chart_col)}2")
+
+    # --- closing-odds table, league-table order ---------------------------
+    if odds_lookup is None or not table_order:
+        return
+    ot = 24
+    ws.cell(row=ot - 1, column=chart_col,
+            value=f"{team}: closing odds to win, by opponent (league table order)").font = BOLD_FONT
+    for i, h in enumerate(["League Table", "Home Odds", "Away Odds"]):
+        _hdr(ws.cell(row=ot, column=chart_col + i, value=h))
+    for i, opp in enumerate(table_order):
+        r = ot + 1 + i
+        name_cell = ws.cell(row=r, column=chart_col, value=f"{i + 1}. {opp}")
+        name_cell.font = BOLD_FONT if opp == team else BODY_FONT
+        name_cell.border = THIN_BORDER
+        for j in (1, 2):
+            c = ws.cell(row=r, column=chart_col + j)
+            c.font = BODY_FONT
+            c.border = THIN_BORDER
+            c.number_format = "0.00"
+            c.alignment = Alignment(horizontal="center")
+            if opp == team:
+                c.fill = GREY_FILL
+        if opp == team:
+            name_cell.fill = GREY_FILL
+            continue
+        home_fx = odds_lookup.get((team, opp))   # fixture at this team's ground
+        away_fx = odds_lookup.get((opp, team))   # fixture at the opponent's ground
+        if home_fx:
+            c = ws.cell(row=r, column=chart_col + 1, value=home_fx["home_odds"])
+            res = "W" if home_fx["hg"] > home_fx["ag"] else ("D" if home_fx["hg"] == home_fx["ag"] else "L")
+            c.fill = RESULT_FILLS[res]
+        if away_fx:
+            c = ws.cell(row=r, column=chart_col + 2, value=away_fx["away_odds"])
+            res = "W" if away_fx["ag"] > away_fx["hg"] else ("D" if away_fx["ag"] == away_fx["hg"] else "L")
+            c.fill = RESULT_FILLS[res]
+
+    leg = ot + len(table_order) + 2
+    for k, (res, label) in enumerate((("W", "Won"), ("D", "Drew"), ("L", "Lost"))):
+        ws.cell(row=leg + k, column=chart_col).fill = RESULT_FILLS[res]
+        ws.cell(row=leg + k, column=chart_col, value=label).font = BODY_FONT
+    ws.cell(row=leg + 3, column=chart_col,
+            value="Odds = this team's own closing price to win that fixture. Home Odds = the game at this "
+                  "team's ground; Away Odds = the game at the opponent's.").font = SUBTITLE_FONT
+    ws.cell(row=leg + 4, column=chart_col,
+            value="Source: football-data.co.uk Pinnacle closing odds (market-average closing if Pinnacle is "
+                  "missing). Blank = not played yet.").font = SUBTITLE_FONT
+
+    ws.column_dimensions[L(c0)].width = 30
+    for j in range(1, 5):
+        ws.column_dimensions[L(c0 + j)].width = 16
+    ws.column_dimensions[L(c0 + 5)].width = 3
+    ws.column_dimensions[L(chart_col)].width = 30
+    ws.column_dimensions[L(chart_col + 1)].width = 12
+    ws.column_dimensions[L(chart_col + 2)].width = 12
+
+
+def write_league_summary_sheet(wb: Workbook, team_info: dict, standings: pd.DataFrame):
+    """One row per team, in league-table order. Ranks are 1 = best and are
+    RANK() formulas over the value columns on the right (K:O), which are
+    themselves formulas into each team's tab - so the sheet recalculates with
+    the rest of the workbook."""
+    ws = wb.create_sheet("League Summary")
+    headers = ["Team", "League Position", "Games Played",
+               "Goals For Supremacy Rank", "Goals Conceded Supremacy Rank",
+               "Goals Above Expected (Total) Rank", "xPts Delta Rank", "Market Points Rank",
+               "Games +ve xG Supremacy", "Games -ve xG Supremacy",
+               "Avg xG Delta (For)", "Avg xG Delta (Against)", "Avg Total xG Delta",
+               "xPts Delta (Total)", "Market xPts (Total)"]
+    ws.append(headers)
+    style_header_row(ws, 1, len(headers))
+    ws.row_dimensions[1].height = 48
+
+    order = [t for t in standings["team"] if t in team_info] + [t for t in team_info if t not in set(standings["team"])]
+    n = len(order)
+    last = n + 1
+    lt_last = len(standings) + 1
+    has_table = "League Table" in wb.sheetnames
+    for i, team in enumerate(order):
+        r = i + 2
+        info = team_info[team]
+        sh, sr, cl = info["sheet_name"], info["summary_rows"], info["col_letter"]
+        sup = cl["Supremacy Delta"]
+        last_m = info["n_matches"] + 1
+        if has_table:
+            pos = f"=IFERROR(INDEX('League Table'!$A$2:$A${lt_last},MATCH($A{r},'League Table'!$B$2:$B${lt_last},0)),\"\")"
+            gp = f"=IFERROR(INDEX('League Table'!$C$2:$C${lt_last},MATCH($A{r},'League Table'!$B$2:$B${lt_last},0)),\"\")"
+        else:
+            pos, gp = "", f"='{sh}'!$E${sr['Matches played']}"
+        ws.append([
+            team, pos, gp,
+            f"=RANK(K{r},K$2:K${last},0)",       # attack: more xG than expected = best
+            f"=RANK(L{r},L$2:L${last},1)",       # defence: most NEGATIVE delta = rank 1
+            f"=RANK(M{r},M$2:M${last},0)",       # total xG above expectation, highest = 1
+            f"=RANK(N{r},N$2:N${last},0)",
+            f"=RANK(O{r},O$2:O${last},0)",
+            f"=COUNTIF('{sh}'!${sup}$2:${sup}${last_m},\">0\")",
+            f"=COUNTIF('{sh}'!${sup}$2:${sup}${last_m},\"<0\")",
+            # ROUND(...,4): exact ties (identical averages that differ only by
+            # floating-point noise) must share a rank, not be split arbitrarily.
+            f"=ROUND('{sh}'!$E${sr['Avg xG Delta (For)']},4)",
+            f"=ROUND('{sh}'!$E${sr['Avg xG Delta (Against)']},4)",
+            f"=ROUND('{sh}'!$E${sr['Avg Total xG Delta']},4)",
+            f"=ROUND('{sh}'!$E${sr['Total xPts (Actual)']}-'{sh}'!$E${sr['Total xPts (Market)']},4)",
+            f"=ROUND('{sh}'!$E${sr['Total xPts (Market)']},4)",
+        ])
+
+    for row in ws.iter_rows(min_row=2, max_row=last, max_col=len(headers)):
+        for cell in row:
+            cell.font = BODY_FONT
+            if 2 <= cell.column <= 10:
+                cell.alignment = Alignment(horizontal="center")
+            if cell.column >= 11:
+                cell.number_format = "0.00"
+    for col in range(1, len(headers) + 1):
+        ws.cell(row=1, column=col).font = HEADER_FONT
+
+    for letter in "DEFGH":
+        color_scale(ws, f"{letter}2:{letter}{last}", invert=True)   # rank 1 = green
+    ws.conditional_formatting.add(f"I2:I{last}", ColorScaleRule(
+        start_type="min", start_color=WHITE, end_type="max", end_color=GREEN))
+    ws.conditional_formatting.add(f"J2:J{last}", ColorScaleRule(
+        start_type="min", start_color=WHITE, end_type="max", end_color=RED))
+
+    notes = [
+        "How to read this sheet",
+        "Ranks: 1 = best. Rows are in league-table order (position and games played come from the League Table sheet).",
+        "Goals For Supremacy Rank: avg xG Delta (For) - actual xG for minus the pre-match market xG for. Highest = rank 1.",
+        "Goals Conceded Supremacy Rank: avg xG Delta (Against) - actual xG against minus pre-match market xG against. "
+        "The more negative (conceding less than expected), the better the rank, so the most negative = rank 1.",
+        "Goals Above Expected (Total) Rank: avg Match Total xG Delta - combined actual xG in the team's games minus the combined "
+        "pre-match market xG. Highest = rank 1 (games producing the most goals above expectation).",
+        "xPts Delta Rank: season-total actual xPts minus market xPts. Highest = rank 1.   Market Points Rank: season-total market xPts, highest = rank 1.",
+        "Games +ve / -ve xG Supremacy: games where the team's Supremacy Delta (actual xG supremacy minus pre-match expected supremacy) was above / below zero.",
+        "Columns K:O hold the underlying numbers the ranks are calculated from.",
+    ]
+    for k, text in enumerate(notes):
+        c = ws.cell(row=last + 2 + k, column=1, value=text)
+        c.font = BOLD_FONT if k == 0 else SUBTITLE_FONT
+
+    ws.freeze_panes = "B2"
+    ws.column_dimensions["A"].width = 22
+    for col in range(2, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 14
+    polish_sheet(ws, header_row=1, first_data_row=2, last_data_row=last, n_cols=len(headers))
+    return ws
+
+
 def write_about_sheet(wb: Workbook, league_note: str | None = None):
     ws = wb.create_sheet("About This Report")
     ws.sheet_view.showGridLines = False
@@ -1295,6 +1610,9 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
     paragraphs = [
         ("Sheets in this workbook", BOLD_FONT),
         ("League Table - standard standings from every played match.", BODY_FONT),
+        ("League Summary - one row per team in league-table order: league position, games played, ranks (1 = best) for "
+         "goals-for supremacy, goals-conceded supremacy, total goals above expected, xPts delta and market points, plus the "
+         "number of games with positive and negative xG supremacy. The numbers behind the ranks sit in columns K:O.", BODY_FONT),
         ("Overview - a deliberately narrow at-a-glance summary of each team's core xG/xPts form, sorted by Avg xG "
          "Delta (For), best first. Medians, adjusted current form, and a couple of stats already shown elsewhere "
          "are left off - see the team tabs and the dedicated grid sheets for the full detail.", BODY_FONT),
@@ -1315,7 +1633,10 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
         ("xPts Delta - match-by-match grid of expected-points over/under-performance, sorted by its own average.", BODY_FONT),
         ("Upcoming Fixtures - ranked by expected supremacy (see below for how); also estimates each fixture's "
          "total goals, with both estimates shown as in-cell data bars for an at-a-glance visual read.", BODY_FONT),
-        ("One tab per team - full match log, season summary (average AND median of every delta stat), and a Home/Away split table.", BODY_FONT),
+        ("One tab per team - full match log, season summary (average AND median of every delta stat), and a Home/Away split table. "
+         "To the right of the match table: counts of games above/below expected, a goals-for (above the line) / goals-against "
+         "(below the line) bar chart per gameweek with the expected goals as a dashed line, and a league-table-ordered table of "
+         "closing odds coloured green/amber/red for a win/draw/defeat.", BODY_FONT),
         ("", BODY_FONT),
         ("Judgement calls made where the brief was ambiguous", BOLD_FONT),
         ("\u2022 \"In order of xG for\": Overview is sorted by Avg xG Delta (For), highest (most attacking "
@@ -1379,11 +1700,15 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
 
     write_about_sheet(wb, league_note=league_note)
 
+    odds_lookup, table_order, standings = None, None, None
     if results_path:
-        results_df = pd.read_csv(results_path)
+        results_df = pd.read_csv(results_path, encoding="utf-8-sig")
         results_df = results_df.dropna(subset=["FTHG", "FTAG"])  # only played matches
         last_results_row = write_results_data_sheet(wb, results_df)
         write_league_table_sheet(wb, results_df, last_results_row)
+        standings = compute_standings(results_df)
+        table_order = standings["team"].tolist()
+        odds_lookup = build_odds_lookup(results_df)
 
     used_names = set()
     team_info = {}
@@ -1393,7 +1718,8 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
     for team in teams:
         sheet_name = safe_sheet_name(team, used_names)
         team_df = df[df["team"] == team].sort_values("date")
-        info = write_team_sheet(wb, sheet_name, team_df, rolling_window)
+        info = write_team_sheet(wb, sheet_name, team_df, rolling_window,
+                                odds_lookup=odds_lookup, table_order=table_order)
         team_info[team] = info
 
         supremacy_by_team[team] = info["supremacy_series"]
@@ -1402,6 +1728,8 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
         away_supremacy_by_team[team] = info["away_supremacy_series"]
         xpts_delta_by_team[team] = info["xpts_delta_series"]
 
+    if standings is not None:
+        write_league_summary_sheet(wb, team_info, standings)
     write_overview_sheet(wb, team_info, rolling_window)
     write_xpts_table_sheet(wb, team_info)
     write_dashboard_sheet(wb, len(teams))
@@ -1446,7 +1774,7 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
     # Sheet order: About, League Table, Overview, Home & Away Splits, the
     # grids, Upcoming Fixtures, then teams A-Z (Results Data stays hidden
     # but present).
-    front = [n for n in ("About This Report", "League Table", "Overview", "xPts Table", "Dashboard",
+    front = [n for n in ("About This Report", "League Table", "League Summary", "Overview", "xPts Table", "Dashboard",
                           "Data Quality", "Match Log",
                           "Home & Away Splits",
                           "Supremacy Delta", "Supremacy Delta (Home)", "Supremacy Delta (Away)",

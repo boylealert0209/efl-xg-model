@@ -17,6 +17,16 @@ this — see the long comment in `leagues.py`. Run `python scrape_fotmob.py
 check how many matches come back with an xG value before trusting the
 scheduled workflow for it.
 
+**League Summary sheet / team-tab extras (added later):** every report now has
+a "League Summary" sheet (league position, games played, ranks for goals-for
+supremacy, goals-conceded supremacy, total goals above expected, xPts delta
+and market points, plus counts of games with positive/negative xG
+supremacy), and each team tab has - to the right of the match table - counts
+of games above/below expected, a goals-for/against bar chart with the
+expected goals as a line, and a league-table-ordered closing-odds table
+coloured by result. No new command-line options: it all comes from the same
+`--input`/`--results` files (closing odds are read from the results file).
+
 ## Pipeline
 
 Run each step by hand, or see **Automated weekly update** below to run (and
