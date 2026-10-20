@@ -47,3 +47,9 @@ date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_tot
 2026-10-10,Rangers,Kilmarnock,2.954,0.682,3.636,True,0.824,0.122,0.054
 2026-10-11,Motherwell,Celtic,1.163,2.19,3.353,True,0.194,0.205,0.602
 2026-10-11,Aberdeen,St Johnstone,1.497,1.156,2.654,True,0.442,0.273,0.285
+2026-10-17,Aberdeen,St Mirren,1.739,1.084,2.823,True,0.52,0.248,0.232
+2026-10-17,Hibernian,Falkirk,1.929,0.985,2.914,True,0.586,0.23,0.184
+2026-10-17,Kilmarnock,Motherwell,1.328,1.741,3.069,True,0.287,0.249,0.464
+2026-10-17,St Johnstone,Dundee United,1.41,1.432,2.842,True,0.362,0.266,0.372
+2026-10-17,Dundee,Rangers,0.887,2.332,3.219,True,0.124,0.186,0.69
+2026-10-18,Celtic,Hearts,2.143,1.094,3.238,True,0.608,0.207,0.186
