@@ -14,9 +14,9 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-08-29T14:00:00Z,Bournemouth,Everton,2.16,1.84,1,1
 2026-08-29T14:00:00Z,Coventry,Hull,1.29,0.72,0,1
 2026-08-29T16:30:00Z,Tottenham,Newcastle,1.12,0.72,0,2
+2026-08-30T13:00:00Z,Sunderland,Fulham,2.02,0.95,1,0
 2026-08-30T13:00:00Z,Chelsea,Brighton,2.93,1.41,4,3
 2026-08-30T13:00:00Z,Leeds,Brentford,1.46,1.67,1,1
-2026-08-30T13:00:00Z,Sunderland,Fulham,2.02,0.95,1,0
 2026-08-30T15:30:00Z,Man United,Ipswich,4.77,2.06,5,2
 2026-08-31T19:00:00Z,Aston Villa,Arsenal,0.33,1.04,0,1
 2026-09-04T19:00:00Z,Ipswich,Liverpool,0.75,0.69,0,2
@@ -29,11 +29,11 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-09-05T16:30:00Z,Hull,Aston Villa,0.57,1.93,0,0
 2026-09-06T13:00:00Z,Everton,Man United,1.01,0.69,2,2
 2026-09-06T15:30:00Z,Arsenal,Chelsea,2.05,0.39,2,1
+2026-09-12T14:00:00Z,Crystal Palace,Ipswich,0.62,1.68,2,3
+2026-09-12T14:00:00Z,Chelsea,Hull,0.91,1.38,2,2
+2026-09-12T14:00:00Z,Liverpool,Fulham,1.28,0.7,0,0
 2026-09-12T14:00:00Z,Bournemouth,Brentford,1.75,0.5,2,2
 2026-09-12T14:00:00Z,Aston Villa,Nottm Forest,0.82,2.28,1,2
-2026-09-12T14:00:00Z,Chelsea,Hull,0.91,1.38,2,2
-2026-09-12T14:00:00Z,Crystal Palace,Ipswich,0.62,1.68,2,3
-2026-09-12T14:00:00Z,Liverpool,Fulham,1.28,0.7,0,0
 2026-09-12T16:30:00Z,Tottenham,Everton,0.69,1.11,0,0
 2026-09-12T19:00:00Z,Sunderland,Arsenal,1.8,1.88,0,2
 2026-09-13T13:00:00Z,Coventry,Brighton,1.33,2.81,0,5
@@ -41,21 +41,31 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-09-14T19:00:00Z,Leeds,Newcastle,1.99,0.88,4,1
 2026-09-18T19:00:00Z,Brentford,Chelsea,2.65,0.83,3,0
 2026-09-19T11:30:00Z,Tottenham,Aston Villa,1.56,1.26,2,3
+2026-09-19T14:00:00Z,Newcastle,Hull,1.44,1.59,2,1
 2026-09-19T14:00:00Z,Brighton,Arsenal,1.31,1.63,3,0
 2026-09-19T14:00:00Z,Everton,Ipswich,2.24,1.44,1,0
-2026-09-19T14:00:00Z,Newcastle,Hull,1.44,1.59,2,1
 2026-09-19T16:30:00Z,Nottm Forest,Coventry,1.1,0.67,0,1
 2026-09-20T13:00:00Z,Bournemouth,Liverpool,0.79,1.65,0,1
 2026-09-20T13:00:00Z,Leeds,Crystal Palace,1.31,1.06,0,0
 2026-09-20T13:00:00Z,Man City,Sunderland,2.82,3.57,5,3
 2026-09-20T15:30:00Z,Fulham,Man United,1.62,1.6,1,1
 2026-10-10T11:30:00Z,Arsenal,Leeds,2.33,0.62,2,1
+2026-10-10T14:00:00Z,Sunderland,Brighton,0.72,1.41,0,2
+2026-10-10T14:00:00Z,Ipswich,Fulham,1.15,1.81,2,1
 2026-10-10T14:00:00Z,Aston Villa,Brentford,2.28,1.06,2,2
 2026-10-10T14:00:00Z,Chelsea,Bournemouth,1.1,1.38,5,1
-2026-10-10T14:00:00Z,Ipswich,Fulham,1.15,1.81,2,1
-2026-10-10T14:00:00Z,Sunderland,Brighton,0.72,1.41,0,2
 2026-10-10T16:30:00Z,Man United,Tottenham,0.8,1.62,1,1
 2026-10-11T13:00:00Z,Crystal Palace,Nottm Forest,2.41,3.34,3,1
 2026-10-11T13:00:00Z,Hull,Everton,1.33,1.68,2,2
 2026-10-11T15:30:00Z,Liverpool,Man City,0.94,1.28,0,3
 2026-10-12T19:00:00Z,Coventry,Newcastle,1.47,1.84,4,1
+2026-10-17T11:30:00Z,Everton,Chelsea,0.43,1.47,0,2
+2026-10-17T14:00:00Z,Brentford,Liverpool,0.88,1.64,1,2
+2026-10-17T14:00:00Z,Fulham,Hull,1.38,0.16,1,0
+2026-10-17T14:00:00Z,Man City,Ipswich,3.35,1.86,3,2
+2026-10-17T16:30:00Z,Newcastle,Aston Villa,0.99,1.57,0,1
+2026-10-18T13:00:00Z,Bournemouth,Sunderland,4.23,0.07,2,0
+2026-10-18T13:00:00Z,Brighton,Crystal Palace,2.0,0.77,5,0
+2026-10-18T13:00:00Z,Leeds,Man United,1.41,0.92,1,1
+2026-10-18T15:30:00Z,Nottm Forest,Arsenal,0.9,1.14,0,1
+2026-10-19T19:00:00Z,Tottenham,Coventry,0.86,0.77,3,1
