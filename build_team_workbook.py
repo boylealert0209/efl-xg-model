@@ -1350,12 +1350,11 @@ def write_team_extras(ws: Worksheet, team: str, n_cols: int, n_matches: int, las
     column after it):
 
       1. Over/under-expected game counts (xG and goals, for and against).
-      2. A separate gameweek table (Goals For, Goals Against shown as a
-         negative, and the pre-match expected goals for and against - kept
-         apart from the actual-xG columns in the main match table).
-      3. A bar chart off that table: goals for ABOVE the zero line, goals
-         against BELOW it, one pair of bars per gameweek (MW1, MW2...), with a
-         dashed line across each side showing what was expected.
+      2. A separate gameweek table (pre-match xG and actual xG, for and
+         against) that feeds the charts.
+      3. Two charts stacked directly one above the other (same width, so each
+         gameweek lines up vertically): xG FOR with the pre-match (market)
+         xG as bars and actual xG as a line, then xG AGAINST the same way.
       4. A league-table-ordered closing-odds table: this team's own closing
          price to win each fixture, split into the home fixture and the away
          fixture against each opponent, filled green (won) / amber (drew) /
@@ -1371,6 +1370,7 @@ def write_team_extras(ws: Worksheet, team: str, n_cols: int, n_matches: int, las
     gf, ga = col_letter["Goals For"], col_letter["Goals Against"]
     pf, pa = col_letter["xG Pre-Match (For)"], col_letter["xG Pre-Match (Against)"]
     dxf, dxa = col_letter["xG Delta (For)"], col_letter["xG Delta (Against)"]
+    af, aa = col_letter["xG Actual (For)"], col_letter["xG Actual (Against)"]
 
     def rng(letter):
         return f"${letter}$2:${letter}${last_row}"
@@ -1400,64 +1400,69 @@ def write_team_extras(ws: Worksheet, team: str, n_cols: int, n_matches: int, las
     # --- gameweek table (chart source) ------------------------------------
     hr = 10
     ws.cell(row=hr - 1, column=c0,
-            value="Chart data: Against figures are stored as negatives so they plot below the zero line.").font = SUBTITLE_FONT
-    for i, h in enumerate(["Gameweek", "Goals For", "Goals Against", "Expected Goals For", "Expected Goals Against"]):
+            value="Chart data: pre-match (market) xG as bars, actual (FotMob) xG as a line.").font = SUBTITLE_FONT
+    for i, h in enumerate(["Gameweek", "Pre-Match xG For", "Actual xG For",
+                           "Pre-Match xG Against", "Actual xG Against"]):
         _hdr(ws.cell(row=hr, column=c0 + i, value=h))
     ws.row_dimensions[hr].height = 30
     for i in range(n_matches):
         r, mr = hr + 1 + i, 2 + i
-        vals = [f"MW{i + 1}", f"={gf}{mr}", f"=-{ga}{mr}", f"={pf}{mr}", f"=-{pa}{mr}"]
+        vals = [f"MW{i + 1}", f"={pf}{mr}", f"={af}{mr}", f"={pa}{mr}", f"={aa}{mr}"]
         for j, v in enumerate(vals):
             cell = ws.cell(row=r, column=c0 + j, value=v)
             cell.font = BODY_FONT
             cell.border = THIN_BORDER
             if j:
-                cell.number_format = "0;-0;0" if j in (1, 2) else "0.00"
+                cell.number_format = "0.00"
                 cell.alignment = Alignment(horizontal="center")
 
-    # --- chart --------------------------------------------------------------
-    bar = BarChart()
-    bar.type = "col"
-    bar.grouping = "clustered"
-    bar.overlap = 100  # goals for and against share one x position, one up, one down
-    bar.gapWidth = 60
-    bar.add_data(Reference(ws, min_col=c0 + 1, max_col=c0 + 2, min_row=hr, max_row=hr + n_matches),
-                 titles_from_data=True)
+    # --- two stacked charts, same width so the gameweeks line up vertically --
     cats = Reference(ws, min_col=c0, min_row=hr + 1, max_row=hr + n_matches)
-    bar.set_categories(cats)
-    bar.series[0].graphicalProperties.solidFill = "5B9BD5"
-    bar.series[1].graphicalProperties.solidFill = "ED7D31"
 
-    line = LineChart()
-    line.add_data(Reference(ws, min_col=c0 + 3, max_col=c0 + 4, min_row=hr, max_row=hr + n_matches),
-                  titles_from_data=True)
-    line.set_categories(cats)
-    for s_, colour in zip(line.series, ("000000", "595959")):
-        s_.graphicalProperties.line.solidFill = colour
-        s_.graphicalProperties.line.width = 22000
-        s_.graphicalProperties.line.dashStyle = "dash"
+    def xg_chart(title, bar_col, line_col, bar_colour, line_colour):
+        bar = BarChart()
+        bar.type = "col"
+        bar.grouping = "clustered"
+        bar.gapWidth = 60
+        bar.add_data(Reference(ws, min_col=bar_col, min_row=hr, max_row=hr + n_matches),
+                     titles_from_data=True)
+        bar.set_categories(cats)
+        bar.series[0].graphicalProperties.solidFill = bar_colour
+
+        line = LineChart()
+        line.add_data(Reference(ws, min_col=line_col, min_row=hr, max_row=hr + n_matches),
+                      titles_from_data=True)
+        line.set_categories(cats)
+        s_ = line.series[0]
+        s_.graphicalProperties.line.solidFill = line_colour
+        s_.graphicalProperties.line.width = 28000
         s_.marker.symbol = "circle"
-        s_.marker.size = 6
-        s_.marker.graphicalProperties.solidFill = colour
-        s_.marker.graphicalProperties.line.solidFill = colour
+        s_.marker.size = 7
+        s_.marker.graphicalProperties.solidFill = line_colour
+        s_.marker.graphicalProperties.line.solidFill = line_colour
         s_.smooth = False
 
-    bar.title = f"{team}: goals for (above) and against (below) vs expected"
-    bar.y_axis.title = "Goals"
-    bar.y_axis.number_format = "0;0;0"  # show goals against as a positive count below the axis
-    bar.x_axis.tickLblPos = "low"       # gameweek labels along the bottom, not on the zero line
-    bar.x_axis.delete = False
-    bar.y_axis.delete = False
-    bar.legend.position = "b"
-    bar += line
-    bar.height, bar.width = 10, 26
+        bar.title = title
+        bar.y_axis.title = "xG"
+        bar.y_axis.number_format = "0.0"
+        bar.y_axis.scaling.min = 0
+        bar.x_axis.delete = False
+        bar.y_axis.delete = False
+        bar.legend.position = "b"
+        bar += line
+        bar.height, bar.width = 8, 26
+        return bar
+
     chart_col = c0 + 6
-    ws.add_chart(bar, f"{L(chart_col)}2")
+    ws.add_chart(xg_chart(f"{team}: xG for - pre-game expected (bars) vs actual (line)",
+                          c0 + 1, c0 + 2, "5B9BD5", "000000"), f"{L(chart_col)}2")
+    ws.add_chart(xg_chart(f"{team}: xG against - pre-game expected (bars) vs actual (line)",
+                          c0 + 3, c0 + 4, "ED7D31", "C00000"), f"{L(chart_col)}19")
 
     # --- closing-odds table, league-table order ---------------------------
     if odds_lookup is None or not table_order:
         return
-    ot = 24
+    ot = 38
     ws.cell(row=ot - 1, column=chart_col,
             value=f"{team}: closing odds to win, by opponent (league table order)").font = BOLD_FONT
     for i, h in enumerate(["League Table", "Home Odds", "Away Odds"]):
@@ -1634,8 +1639,8 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
         ("Upcoming Fixtures - ranked by expected supremacy (see below for how); also estimates each fixture's "
          "total goals, with both estimates shown as in-cell data bars for an at-a-glance visual read.", BODY_FONT),
         ("One tab per team - full match log, season summary (average AND median of every delta stat), and a Home/Away split table. "
-         "To the right of the match table: counts of games above/below expected, a goals-for (above the line) / goals-against "
-         "(below the line) bar chart per gameweek with the expected goals as a dashed line, and a league-table-ordered table of "
+         "To the right of the match table: counts of games above/below expected, two stacked charts per gameweek - xG for, then "
+         "xG against - each with the pre-match (market) xG as bars and the actual xG as a line, and a league-table-ordered table of "
          "closing odds coloured green/amber/red for a win/draw/defeat.", BODY_FONT),
         ("", BODY_FONT),
         ("Judgement calls made where the brief was ambiguous", BOLD_FONT),

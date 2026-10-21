@@ -3,3 +3,5 @@ numpy
 scipy
 requests
 openpyxl
+google-api-python-client
+google-auth
