@@ -1,13 +1,13 @@
 date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
-2026-10-20,AFC Wimbledon,Mansfield,1.185,1.599,2.784,True,0.271,0.271,0.458
-2026-10-20,Blackpool,Milton Keynes Dons,1.569,1.487,3.056,True,0.383,0.27,0.347
-2026-10-20,Bromley,Leicester,1.205,2.012,3.218,True,0.218,0.229,0.552
-2026-10-20,Burton,Bradford,1.051,1.559,2.61,True,0.248,0.27,0.481
-2026-10-20,Cambridge,Wycombe,1.502,1.363,2.865,True,0.396,0.27,0.334
-2026-10-20,Doncaster,Stockport,1.166,1.765,2.93,True,0.248,0.245,0.507
-2026-10-20,Huddersfield,Peterboro,2.24,1.112,3.351,True,0.619,0.213,0.168
-2026-10-20,Luton,Barnsley,2.269,1.172,3.441,True,0.61,0.217,0.173
-2026-10-20,Notts County,Sheffield Weds,1.216,1.55,2.766,True,0.289,0.272,0.44
-2026-10-20,Oxford,Wigan,1.621,1.129,2.75,True,0.482,0.256,0.263
-2026-10-20,Stevenage,Plymouth,1.358,1.358,2.716,True,0.366,0.269,0.366
-2026-10-21,Reading,Leyton Orient,2.062,0.99,3.052,True,0.612,0.222,0.166
+2026-10-24,Huddersfield,Wigan,2.266,0.849,3.115,True,0.686,0.192,0.122
+2026-10-24,Luton,Leicester,1.744,1.499,3.243,True,0.425,0.254,0.321
+2026-10-24,AFC Wimbledon,Wycombe,1.108,1.72,2.828,True,0.243,0.246,0.51
+2026-10-24,Blackpool,Mansfield,1.407,1.521,2.928,True,0.34,0.27,0.39
+2026-10-24,Bromley,Peterboro,1.457,1.842,3.299,True,0.297,0.245,0.458
+2026-10-24,Burton,Leyton Orient,1.355,1.294,2.648,True,0.373,0.281,0.345
+2026-10-24,Cambridge,Plymouth,1.542,1.408,2.95,True,0.399,0.262,0.34
+2026-10-24,Doncaster,Sheffield Weds,1.462,1.502,2.964,True,0.357,0.269,0.374
+2026-10-24,Notts County,Stockport,0.893,1.892,2.785,True,0.159,0.244,0.597
+2026-10-24,Oxford,Bradford,1.281,1.326,2.607,True,0.346,0.287,0.367
+2026-10-24,Reading,Barnsley,2.203,1.17,3.372,True,0.599,0.218,0.183
+2026-10-24,Stevenage,Milton Keynes Dons,1.481,1.075,2.556,True,0.458,0.271,0.271
