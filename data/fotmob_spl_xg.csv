@@ -12,9 +12,9 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-08-09T14:00:00Z,Hearts,Dundee United,2.15,0.58,4,0
 2026-08-09T15:00:00Z,Rangers,Hibernian,2.22,1.7,1,2
 2026-08-22T16:45:00Z,Dundee United,Dundee FC,1.19,1.43,0,2
-2026-08-29T14:00:00Z,Celtic,Falkirk,3.45,0.57,2,1
-2026-08-29T14:00:00Z,Hearts,St. Johnstone,2.2,1.28,2,1
 2026-08-29T14:00:00Z,Kilmarnock,Dundee United,1.13,3.42,0,4
+2026-08-29T14:00:00Z,Hearts,St. Johnstone,2.2,1.28,2,1
+2026-08-29T14:00:00Z,Celtic,Falkirk,3.45,0.57,2,1
 2026-08-30T11:00:00Z,Aberdeen,Rangers,0.35,2.1,0,1
 2026-08-30T14:00:00Z,Dundee FC,Hibernian,1.01,2.33,1,2
 2026-08-30T14:00:00Z,St. Mirren,Motherwell,2.92,2.45,3,3
@@ -28,8 +28,8 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-09-05T14:00:00Z,Aberdeen,Kilmarnock,1.08,1.11,0,0
 2026-09-05T14:00:00Z,Dundee United,Falkirk,2.65,1.22,1,1
 2026-09-05T19:00:00Z,St. Mirren,Celtic,1.95,3.19,1,2
-2026-09-06T14:00:00Z,Hearts,Dundee FC,1.92,0.42,2,1
 2026-09-06T14:00:00Z,St. Johnstone,Hibernian,2.32,1.61,2,1
+2026-09-06T14:00:00Z,Hearts,Dundee FC,1.92,0.42,2,1
 2026-09-09T18:45:00Z,Rangers,St. Mirren,2.46,1.26,1,0
 2026-09-09T19:00:00Z,St. Johnstone,Celtic,0.69,1.8,0,1
 2026-09-15T18:45:00Z,Hibernian,Kilmarnock,1.45,2.21,0,1
@@ -41,10 +41,10 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-09-19T14:00:00Z,St. Mirren,Dundee United,0.99,1.6,0,3
 2026-09-19T16:45:00Z,Kilmarnock,Hearts,0.39,1.92,1,1
 2026-09-20T11:00:00Z,Celtic,Rangers,0.39,1.75,0,1
-2026-10-10T14:00:00Z,Dundee United,Hibernian,1.84,0.83,1,0
-2026-10-10T14:00:00Z,Falkirk,Dundee FC,2.31,1.9,1,2
 2026-10-10T14:00:00Z,Hearts,St. Mirren,3.9,0.9,5,0
 2026-10-10T14:00:00Z,Rangers,Kilmarnock,1.93,1.25,3,1
+2026-10-10T14:00:00Z,Dundee United,Hibernian,1.84,0.83,1,0
+2026-10-10T14:00:00Z,Falkirk,Dundee FC,2.31,1.9,1,2
 2026-10-11T11:00:00Z,Motherwell,Celtic,0.97,2.87,0,2
 2026-10-11T13:00:00Z,Aberdeen,St. Johnstone,1.69,1.25,0,1
 2026-10-17T14:00:00Z,Aberdeen,St. Mirren,2.5,1.26,3,1
@@ -53,3 +53,9 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-10-17T14:00:00Z,St. Johnstone,Dundee United,1.35,1.27,1,1
 2026-10-17T19:00:00Z,Dundee FC,Rangers,1.82,2.29,2,2
 2026-10-18T14:00:00Z,Celtic,Hearts,4.22,1.56,7,1
+2026-10-24T14:00:00Z,Dundee United,Aberdeen,1.74,1.57,3,2
+2026-10-24T14:00:00Z,Falkirk,Kilmarnock,1.33,0.85,3,0
+2026-10-24T14:00:00Z,Rangers,St. Johnstone,4.2,0.62,4,0
+2026-10-24T14:00:00Z,St. Mirren,Dundee FC,1.7,1.72,2,1
+2026-10-25T12:00:00Z,Hibernian,Celtic,1.19,1.15,1,2
+2026-10-25T14:00:00Z,Motherwell,Hearts,1.26,1.06,0,2
