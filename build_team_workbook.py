@@ -91,7 +91,8 @@ import pandas as pd
 from openpyxl import Workbook
 from openpyxl.comments import Comment
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.formatting.rule import ColorScaleRule, DataBarRule
+from openpyxl.formatting.rule import ColorScaleRule, DataBarRule, FormulaRule
+from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.chart import BarChart, LineChart, Reference
@@ -1605,6 +1606,269 @@ def write_league_summary_sheet(wb: Workbook, team_info: dict, standings: pd.Data
     return ws
 
 
+def write_home_away_form_sheet(wb: Workbook, df: pd.DataFrame, odds_lookup: dict | None):
+    """"Home v Away Form": pick a home team and an away team from two drop-down
+    menus and the sheet shows
+
+      1. the HOME team's home games and 2. the AWAY team's away games, each as
+         a table in the same style as the closing-odds table on a team tab
+         (own win / draw / opponent win closing prices, filled green / amber /
+         red for a win / draw / defeat), followed on the same row by
+           - expected points: xPts from the shots actually created vs xPts the
+             pre-match odds implied, and the +/- between them;
+           - goals-for supremacy: actual xG for vs pre-match (expected) xG for,
+             and the +/- (positive = better than expected);
+           - goals conceded: actual xG against vs pre-match xG against, and the
+             +/- (NEGATIVE = better than expected - conceded less);
+           - the actual score and result;
+      3. below the two tables, all of that written out in words for the two
+         selected teams.
+
+    The tables are INDEX/MATCH formulas against a hidden 'Form Data' sheet (one
+    row per team per match) - no dynamic-array functions - so they work the same
+    in Excel and Google Sheets and update the moment a drop-down changes."""
+    L = get_column_letter
+    teams = sorted(df["team"].unique())
+
+    # ---- hidden backing data: one row per team per match ----
+    fd = wb.create_sheet("Form Data")
+    fd.sheet_state = "hidden"
+    fd_headers = ["Key", "Team", "Venue", "N", "Date", "Opponent", "Win Odds", "Draw Odds", "Opp Win Odds",
+                  "Result", "Score", "GF", "GA", "xPts Actual", "xPts Expected", "xPts +/-",
+                  "xG For Exp", "xG For Act", "For +/-", "xG Ag Exp", "xG Ag Act", "Ag +/-"]
+    fd.append(fd_headers)
+    style_header_row(fd, 1, len(fd_headers))
+    fd_col = {h: L(i + 1) for i, h in enumerate(fd_headers)}
+
+    d = df.sort_values(["team", "date"]).copy()
+    d["venue"] = d["venue"].str.lower()
+    d["n"] = d.groupby(["team", "venue"]).cumcount() + 1
+    max_n = 1
+    for _, r in d.iterrows():
+        team, opp, venue = r["team"], r["opponent"], r["venue"]
+        fx = (odds_lookup or {}).get((team, opp) if venue == "home" else (opp, team))
+        win = draw = opp_win = None
+        if fx:
+            draw = fx["draw_odds"]
+            win, opp_win = (fx["home_odds"], fx["away_odds"]) if venue == "home" else (fx["away_odds"], fx["home_odds"])
+        gf, ga = int(r["goals_for"]), int(r["goals_against"])
+        res = "W" if gf > ga else ("D" if gf == ga else "L")
+        max_n = max(max_n, int(r["n"]))
+        fd.append([
+            f"{team}|{venue}|{int(r['n'])}", team, venue.title(), int(r["n"]),
+            pd.to_datetime(r["date"]).strftime("%Y-%m-%d"), opp, win, draw, opp_win,
+            res, f"{gf}-{ga}", gf, ga,
+            round_or_none(r["xpts_actual"]), round_or_none(r["xpts_market"]), round_or_none(r["xpts_delta"]),
+            round_or_none(r["xg_pre_market_for"]), round_or_none(r["xg_actual_for"]), round_or_none(r["xg_delta_for"]),
+            round_or_none(r["xg_pre_market_against"]), round_or_none(r["xg_actual_against"]),
+            round_or_none(r["xg_delta_against"]),
+        ])
+    fd_last = fd.max_row
+    list_col = len(fd_headers) + 2                       # team list for the drop-downs
+    fd.cell(row=1, column=list_col, value="Teams")
+    for i, t in enumerate(teams, start=2):
+        fd.cell(row=i, column=list_col, value=t)
+    list_ref = f"'Form Data'!${L(list_col)}$2:${L(list_col)}${len(teams) + 1}"
+
+    def fdr(header):                                       # absolute range into Form Data
+        c = fd_col[header]
+        return f"'Form Data'!${c}$2:${c}${fd_last}"
+
+    # ---- the visible sheet ----
+    ws = wb.create_sheet("Home v Away Form")
+    ws.sheet_view.showGridLines = False
+    cap = max_n                                            # rows reserved per table
+    headers = ["#", "Date", "Opponent", "Score", "Result", "Win Odds", "Draw Odds", "Opp Win Odds",
+               "xPts (Actual)", "xPts (Expected)", "xPts +/-",
+               "xG For (Expected)", "xG For (Actual)", "Goals For +/-",
+               "xG Against (Expected)", "xG Against (Actual)", "Goals Against +/-"]
+    n_vis = len(headers)
+    HELP = n_vis + 1                                       # helper columns (hidden): row, result text, GF, GA
+    help_row, help_txt, help_gf, help_ga = L(HELP), L(HELP + 1), L(HELP + 2), L(HELP + 3)
+
+    ws.cell(row=1, column=1, value="Home v Away Form").font = TITLE_FONT
+    ws.cell(row=2, column=1,
+            value="Pick the two teams in the yellow boxes. Home team = its HOME games only; away team = its AWAY games only. "
+                  "Expected = what the pre-match (closing-odds) market implied.").font = SUBTITLE_FONT
+    pick_fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
+    for row, label, default in ((4, "Home team", teams[0]), (5, "Away team", teams[1] if len(teams) > 1 else teams[0])):
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=2)
+        ws.cell(row=row, column=1, value=label).font = BOLD_FONT
+        ws.merge_cells(start_row=row, start_column=3, end_row=row, end_column=4)
+        c = ws.cell(row=row, column=3, value=default)
+        c.font = BOLD_FONT
+        c.fill = pick_fill
+        for cc in (3, 4):
+            ws.cell(row=row, column=cc).border = THIN_BORDER
+        ws.cell(row=row, column=5, value="<- choose from the drop-down").font = SUBTITLE_FONT
+    dv = DataValidation(type="list", formula1=f"={list_ref}", allow_blank=False, showDropDown=False)
+    dv.error, dv.errorTitle = "Pick a team from the list.", "Unknown team"
+    ws.add_data_validation(dv)
+    dv.add("C4")
+    dv.add("C5")
+
+    tables = {}
+
+    def build_table(top: int, team_cell: str, venue: str, title_word: str):
+        ws.merge_cells(start_row=top, start_column=1, end_row=top, end_column=n_vis)
+        t = ws.cell(row=top, column=1,
+                    value=f'={team_cell}&" - {title_word} ("&COUNT({help_gf}{top + 2}:{help_gf}{top + 1 + cap})&" played)"')
+        t.font = BOLD_FONT
+        t.fill = SECTION_FILL
+        hr = top + 1
+        for c, h in enumerate(headers, start=1):
+            ws.cell(row=hr, column=c, value=h)
+        style_header_row(ws, hr, n_vis)
+        ws.row_dimensions[hr].height = 42
+        first, last = hr + 1, hr + cap
+        for i in range(cap):
+            r = first + i
+            ws.cell(row=r, column=1, value=i + 1)
+            ws.cell(row=r, column=HELP,
+                    value=f'=IFERROR(MATCH({team_cell}&"|{venue}|"&$A{r},{fdr("Key")},0),"")')
+
+            def pull(header, plain=True):
+                rng = fdr(header)
+                if plain:
+                    return f'=IF(${help_row}{r}="","",INDEX({rng},${help_row}{r}))'
+                return f'=IF(${help_row}{r}="","",IF(INDEX({rng},${help_row}{r})="","",INDEX({rng},${help_row}{r})))'
+            ws.cell(row=r, column=2, value=pull("Date"))
+            ws.cell(row=r, column=3, value=pull("Opponent"))
+            ws.cell(row=r, column=4, value=pull("Score"))
+            ws.cell(row=r, column=5, value=pull("Result"))
+            ws.cell(row=r, column=6, value=pull("Win Odds", False))
+            ws.cell(row=r, column=7, value=pull("Draw Odds", False))
+            ws.cell(row=r, column=8, value=pull("Opp Win Odds", False))
+            ws.cell(row=r, column=9, value=pull("xPts Actual", False))
+            ws.cell(row=r, column=10, value=pull("xPts Expected", False))
+            ws.cell(row=r, column=11, value=pull("xPts +/-", False))
+            ws.cell(row=r, column=12, value=pull("xG For Exp", False))
+            ws.cell(row=r, column=13, value=pull("xG For Act", False))
+            ws.cell(row=r, column=14, value=pull("For +/-", False))
+            ws.cell(row=r, column=15, value=pull("xG Ag Exp", False))
+            ws.cell(row=r, column=16, value=pull("xG Ag Act", False))
+            ws.cell(row=r, column=17, value=pull("Ag +/-", False))
+            ws.cell(row=r, column=HELP + 1,
+                    value=f'=IF(${help_row}{r}="","",E{r}&" "&D{r}&" v "&C{r})')
+            ws.cell(row=r, column=HELP + 2, value=pull("GF"))
+            ws.cell(row=r, column=HELP + 3, value=pull("GA"))
+            for c in range(1, n_vis + 1):
+                cell = ws.cell(row=r, column=c)
+                cell.font = BODY_FONT
+                cell.border = THIN_BORDER
+                cell.alignment = Alignment(horizontal="center")
+                if c in (6, 7, 8, 9, 10, 12, 13, 15, 16):
+                    cell.number_format = "0.00"
+                elif c in (11, 14, 17):
+                    cell.number_format = "+0.00;-0.00;0.00"
+            ws.cell(row=r, column=3).alignment = Alignment(horizontal="left")
+            for c in range(HELP, HELP + 4):
+                ws.cell(row=r, column=c).font = Font(name=FONT_NAME, color="808080")
+
+        # Win / draw / defeat colouring (result cell + this team's own win price).
+        for letter, key in (("W", GREEN), ("D", AMBER), ("L", RED)):
+            fill = PatternFill(start_color=key, end_color=key, fill_type="solid", bgColor=key)
+            for rng in (f"E{first}:E{last}", f"F{first}:F{last}"):
+                ws.conditional_formatting.add(
+                    rng, FormulaRule(formula=[f'$E{first}="{letter}"'], fill=fill))
+        color_scale_zero(ws, f"K{first}:K{last}", invert=False)   # xPts: plus = better
+        color_scale_zero(ws, f"N{first}:N{last}", invert=False)   # goals for: plus = better
+        color_scale_zero(ws, f"Q{first}:Q{last}", invert=True)    # conceded: minus = better
+
+        # Summary row: totals for points / goals, averages for the xG columns.
+        sr = last + 1
+        ws.merge_cells(start_row=sr, start_column=1, end_row=sr, end_column=3)
+        ws.cell(row=sr, column=1, value="Total (points, goals) / average (xG)")
+        rg = lambda col: f"{col}{first}:{col}{last}"
+        ws.cell(row=sr, column=4, value=f'=SUM({rg(help_gf)})&"-"&SUM({rg(help_ga)})')
+        ws.cell(row=sr, column=5, value=f'=COUNTIF({rg("E")},"W")&"W "&COUNTIF({rg("E")},"D")&"D "&COUNTIF({rg("E")},"L")&"L"')
+        for c in (9, 10, 11):
+            ws.cell(row=sr, column=c, value=f'=IF(COUNT({rg(L(c))})=0,"",SUM({rg(L(c))}))')
+        for c in (12, 13, 14, 15, 16, 17):
+            ws.cell(row=sr, column=c, value=f'=IFERROR(AVERAGE({rg(L(c))}),"")')
+        for c in range(1, n_vis + 1):
+            cell = ws.cell(row=sr, column=c)
+            cell.font = BOLD_FONT
+            cell.fill = SUMMARY_FILL
+            cell.border = THIN_BORDER
+            cell.alignment = Alignment(horizontal="center")
+            if c in (9, 10, 12, 13, 15, 16):
+                cell.number_format = "0.00"
+            elif c in (11, 14, 17):
+                cell.number_format = "+0.00;-0.00;0.00"
+        ws.cell(row=sr, column=1).alignment = Alignment(horizontal="left")
+        tables[venue] = {"team": team_cell, "first": first, "last": last, "sum": sr}
+        return sr
+
+    home_end = build_table(7, "$C$4", "home", "home form (home games only)")
+    away_end = build_table(home_end + 2, "$C$5", "away", "away form (away games only)")
+
+    # ---- the written summary, below both tables ----
+    top = away_end + 2
+    ws.merge_cells(start_row=top, start_column=1, end_row=top, end_column=n_vis)
+    h = ws.cell(row=top, column=1, value="In words")
+    h.font = BOLD_FONT
+    h.fill = SECTION_FILL
+
+    def sentences(venue: str, word: str, phrase: str):
+        t = tables[venue]
+        tc, f, l, s = t["team"], t["first"], t["last"], t["sum"]
+        rg = lambda col: f"{col}{f}:{col}{l}"
+        played = f"COUNT({rg(help_gf)})"
+        sgn = '"+0.00;-0.00;0.00"'
+        plural_games = f'IF({played}=1," game"," games")'
+        s1 = (f'=IF({played}=0,{tc}&" have not played a {word} game yet.",'
+              f'{tc}&" {phrase}: played "&{played}&{plural_games}&" ("&E{s}&"), scored "&SUM({rg(help_gf)})'
+              f'&" and conceded "&SUM({rg(help_ga)})&". Results: "&_xlfn.TEXTJOIN(", ",TRUE,{rg(help_txt)})&".")')
+        s2 = (f'=IF({played}=0,"","Expected points: "&TEXT(I{s},"0.00")&" from the chances created vs "&TEXT(J{s},"0.00")'
+              f'&" expected from the odds = "&TEXT(K{s},{sgn})&" overall ("&TEXT(K{s}/{played},{sgn})&" per game), "'
+              f'&IF(ABS(K{s}/{played})<0.05,"in line with expectation",IF(K{s}>=0,"better than expected","worse than expected"))&". Plus in "&COUNTIF({rg("K")},">0")'
+              f'&" of "&{played}&", minus in "&COUNTIF({rg("K")},"<0")&".")')
+        s3 = (f'=IF({played}=0,"","Goals for (supremacy): averaging "&TEXT(M{s},"0.00")&" xG for vs "&TEXT(L{s},"0.00")'
+              f'&" expected = "&TEXT(N{s},{sgn})&" per game, "&IF(ABS(N{s})<0.05,"in line with expectation",IF(N{s}>0,"better than expected","worse than expected"))'
+              f'&". Beat the expected xG for in "&COUNTIF({rg("N")},">0")&" of "&{played}&" games.")')
+        s4 = (f'=IF({played}=0,"","Goals conceded: averaging "&TEXT(P{s},"0.00")&" xG against vs "&TEXT(O{s},"0.00")'
+              f'&" expected = "&TEXT(Q{s},{sgn})&" per game, "&IF(Q{s}<=0,"better (conceding less)","worse (conceding more)")'
+              f'&" than expected. Conceded less xG than expected in "&COUNTIF({rg("Q")},"<0")&" of "&{played}&" games.")')
+        return [s1, s2, s3, s4]
+
+    r = top + 1
+    for venue, word, phrase in (("home", "home", "at home"), ("away", "away", "away from home")):
+        for text in sentences(venue, word, phrase):
+            ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_vis)
+            c = ws.cell(row=r, column=1, value=text)
+            c.font = BODY_FONT
+            c.alignment = Alignment(wrap_text=True, vertical="top")
+            ws.row_dimensions[r].height = 34
+            r += 1
+        r += 1                                              # gap between the two teams
+    # Head-to-head read of the two sides' form (per-game xPts and xG +/-).
+    th, ta = tables["home"], tables["away"]
+    ph, pa = f"COUNT({help_gf}{th['first']}:{help_gf}{th['last']})", f"COUNT({help_gf}{ta['first']}:{help_gf}{ta['last']})"
+    sgn = '"+0.00;-0.00;0.00"'
+    ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_vis)
+    c = ws.cell(row=r, column=1, value=(
+        f'=IF(OR({ph}=0,{pa}=0),"","Side by side: "&$C$4&" at home are "&TEXT(K{th["sum"]}/{ph},{sgn})&" xPts per game vs expected, "'
+        f'&TEXT(N{th["sum"]},{sgn})&" goals-for xG and "&TEXT(Q{th["sum"]},{sgn})&" goals-against xG per game; "'
+        f'&$C$5&" away are "&TEXT(K{ta["sum"]}/{pa},{sgn})&" xPts per game, "&TEXT(N{ta["sum"]},{sgn})'
+        f'&" goals-for xG and "&TEXT(Q{ta["sum"]},{sgn})&" goals-against xG per game. "'
+        f'&"(For: plus = better than expected. Against: minus = better than expected.)")'))
+    c.font = BOLD_FONT
+    c.alignment = Alignment(wrap_text=True, vertical="top")
+    ws.row_dimensions[r].height = 48
+    r += 2
+    ws.cell(row=r, column=1,
+            value="xPts (Actual) = deserved points from the shot-based xG; xPts (Expected) = points the pre-match odds implied. "
+                  "Odds = this team's own closing price to win, the draw price, and the opponent's win price.").font = SUBTITLE_FONT
+
+    widths = {1: 5, 2: 12, 3: 20, 4: 8, 5: 9, 6: 10, 7: 10, 8: 11}
+    for c in range(1, n_vis + 1):
+        ws.column_dimensions[L(c)].width = widths.get(c, 13)
+    for c in range(HELP, HELP + 4):                        # helper columns hidden
+        ws.column_dimensions[L(c)].hidden = True
+    ws.freeze_panes = "A6"
+
+
 def write_about_sheet(wb: Workbook, league_note: str | None = None):
     ws = wb.create_sheet("About This Report")
     ws.sheet_view.showGridLines = False
@@ -1630,6 +1894,9 @@ def write_about_sheet(wb: Workbook, league_note: str | None = None):
          "sides - a first stop before trusting a given run's numbers.", BODY_FONT),
         ("Match Log - the single master data table: one row per fixture (not per team) with every core stat, "
          "and an AutoFilter so you can filter by team/venue without hunting through team tabs.", BODY_FONT),
+        ("Home v Away Form - two drop-down menus (home team, away team). Shows the home team's home games and the away team's away games, \
+each with the closing odds (green/amber/red for win/draw/defeat), the actual score and result, expected points vs what the odds implied (+/-), \
+goals-for xG vs expected and goals-against xG vs expected, then the same information written out in words below the two tables.", BODY_FONT),
         ("Home & Away Splits - Total/Home/Away average and median supremacy, and Total/Home/Away goals, for every team.", BODY_FONT),
         ("Supremacy Delta / (Home) / (Away) - match-by-match grids of actual vs. expected xG supremacy, each "
          "sorted by its own average, highest first.", BODY_FONT),
@@ -1742,6 +2009,7 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
     write_match_log_sheet(wb, match_log)
     write_data_quality_sheet(wb, match_log)
     write_home_away_split_sheet(wb, team_info)
+    write_home_away_form_sheet(wb, df, odds_lookup)
 
     avg_total_by_team = {t: team_info[t]["stats"]["avg_total_delta"] for t in teams}
     avg_supremacy_by_team = {t: team_info[t]["stats"]["avg_supremacy"] for t in teams}
@@ -1779,14 +2047,15 @@ def main(input_path, results_path, output_path, rolling_window, fixtures_path=No
     # Sheet order: About, League Table, Overview, Home & Away Splits, the
     # grids, Upcoming Fixtures, then teams A-Z (Results Data stays hidden
     # but present).
-    front = [n for n in ("About This Report", "League Table", "League Summary", "Overview", "xPts Table", "Dashboard",
+    front = [n for n in ("About This Report", "League Table", "Home v Away Form", "League Summary", "Overview", "xPts Table", "Dashboard",
                           "Data Quality", "Match Log",
                           "Home & Away Splits",
                           "Supremacy Delta", "Supremacy Delta (Home)", "Supremacy Delta (Away)",
                           "Total xG Delta", "xPts Delta", "Upcoming Fixtures") if n in wb.sheetnames]
-    order = front + [n for n in wb.sheetnames if n not in front and n != "Results Data"]
-    if "Results Data" in wb.sheetnames:
-        order.append("Results Data")
+    order = front + [n for n in wb.sheetnames if n not in front and n not in ("Results Data", "Form Data")]
+    for hidden in ("Results Data", "Form Data"):
+        if hidden in wb.sheetnames:
+            order.append(hidden)
     wb._sheets = [wb[n] for n in order]
 
     wb.save(output_path)
