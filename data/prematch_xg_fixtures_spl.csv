@@ -1,1 +1,7 @@
 date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
+2026-11-07,Dundee United,Motherwell,1.795,1.322,3.117,True,0.476,0.249,0.275
+2026-11-07,St Johnstone,Dundee,1.468,1.405,2.873,True,0.378,0.272,0.35
+2026-11-07,Aberdeen,Hibernian,1.445,1.382,2.827,True,0.378,0.272,0.35
+2026-11-07,St Mirren,Rangers,0.945,2.215,3.16,True,0.142,0.205,0.653
+2026-11-08,Hearts,Falkirk,2.104,1.091,3.196,True,0.602,0.205,0.194
+2026-11-08,Celtic,Kilmarnock,3.083,0.845,3.928,True,0.809,0.114,0.076
