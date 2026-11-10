@@ -21,11 +21,11 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-08-31T19:00:00Z,Aston Villa,Arsenal,0.33,1.04,0,1
 2026-09-04T19:00:00Z,Ipswich,Liverpool,0.75,0.69,0,2
 2026-09-05T11:30:00Z,Newcastle,Bournemouth,0.71,1.37,2,2
-2026-09-05T14:00:00Z,Nottm Forest,Tottenham,0.92,1.06,0,0
-2026-09-05T14:00:00Z,Man City,Coventry,2.12,1.37,1,0
-2026-09-05T14:00:00Z,Fulham,Crystal Palace,3.14,1.97,2,3
-2026-09-05T14:00:00Z,Brighton,Leeds,2.19,2.49,1,1
 2026-09-05T14:00:00Z,Brentford,Sunderland,1.21,1.71,1,1
+2026-09-05T14:00:00Z,Brighton,Leeds,2.19,2.49,1,1
+2026-09-05T14:00:00Z,Fulham,Crystal Palace,3.14,1.97,2,3
+2026-09-05T14:00:00Z,Man City,Coventry,2.12,1.37,1,0
+2026-09-05T14:00:00Z,Nottm Forest,Tottenham,0.92,1.06,0,0
 2026-09-05T16:30:00Z,Hull,Aston Villa,0.57,1.93,0,0
 2026-09-06T13:00:00Z,Everton,Man United,1.01,0.69,2,2
 2026-09-06T15:30:00Z,Arsenal,Chelsea,2.05,0.39,2,1
@@ -60,9 +60,9 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-10-11T15:30:00Z,Liverpool,Man City,0.94,1.28,0,3
 2026-10-12T19:00:00Z,Coventry,Newcastle,1.47,1.84,4,1
 2026-10-17T11:30:00Z,Everton,Chelsea,0.43,1.47,0,2
+2026-10-17T14:00:00Z,Man City,Ipswich,3.35,1.86,3,2
 2026-10-17T14:00:00Z,Brentford,Liverpool,0.88,1.64,1,2
 2026-10-17T14:00:00Z,Fulham,Hull,1.38,0.16,1,0
-2026-10-17T14:00:00Z,Man City,Ipswich,3.35,1.86,3,2
 2026-10-17T16:30:00Z,Newcastle,Aston Villa,0.99,1.57,0,1
 2026-10-18T13:00:00Z,Brighton,Crystal Palace,2.0,0.77,5,0
 2026-10-18T13:00:00Z,Bournemouth,Sunderland,4.23,0.07,2,0
@@ -89,3 +89,13 @@ date,home_team,away_team,home_xg,away_xg,home_goals,away_goals
 2026-10-31T20:00:00Z,Aston Villa,Fulham,1.83,2.24,1,1
 2026-11-01T16:30:00Z,Liverpool,Arsenal,1.05,0.98,0,1
 2026-11-02T20:00:00Z,Newcastle,Everton,1.29,2.34,0,1
+2026-11-06T20:00:00Z,Everton,Coventry,1.43,1.21,3,1
+2026-11-07T12:30:00Z,Leeds,Tottenham,1.96,0.72,1,0
+2026-11-07T15:00:00Z,Arsenal,Hull,1.26,0.36,1,0
+2026-11-07T15:00:00Z,Fulham,Newcastle,0.7,1.14,1,1
+2026-11-07T17:30:00Z,Nottm Forest,Man City,1.06,1.76,3,1
+2026-11-08T14:00:00Z,Brighton,Brentford,2.11,0.59,2,0
+2026-11-08T14:00:00Z,Crystal Palace,Liverpool,2.6,2.65,1,3
+2026-11-08T14:00:00Z,Ipswich,Bournemouth,1.26,2.23,1,2
+2026-11-08T14:00:00Z,Sunderland,Chelsea,2.38,0.66,1,0
+2026-11-08T16:30:00Z,Man United,Aston Villa,3.55,2.88,4,4
