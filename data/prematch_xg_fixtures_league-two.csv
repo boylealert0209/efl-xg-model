@@ -1,1 +1,11 @@
 date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
+2026-11-14,Exeter,Cheltenham,1.591,1.035,2.626,True,0.495,0.263,0.242
+2026-11-14,Bristol Rvs,Chesterfield,1.329,1.512,2.841,True,0.324,0.269,0.407
+2026-11-14,Colchester,Gillingham,1.507,1.121,2.628,True,0.45,0.279,0.271
+2026-11-14,Crewe,Newport County,1.521,1.112,2.633,True,0.458,0.271,0.271
+2026-11-14,Port Vale,Accrington,1.492,1.019,2.512,True,0.471,0.28,0.249
+2026-11-14,Rochdale,York,1.14,1.914,3.054,True,0.218,0.235,0.546
+2026-11-14,Salford,Northampton,1.835,0.828,2.662,True,0.601,0.245,0.153
+2026-11-14,Shrewsbury,Oldham,1.352,1.291,2.643,True,0.375,0.278,0.347
+2026-11-14,Swindon,Grimsby,1.328,1.732,3.06,True,0.284,0.256,0.459
+2026-11-14,Fleetwood Town,Tranmere,1.641,1.118,2.758,True,0.483,0.271,0.246
