@@ -111,7 +111,9 @@ def extract_schedule_table(html: str) -> pd.DataFrame:
         cols = [str(c) for c in t.columns]
         if any("xG" in c for c in cols) and "Home" in cols and "Away" in cols:
             return t
-
+print("STATUS:", resp.status_code)
+print("FINAL URL:", resp.url)
+print("BODY START:", resp.text[:500])
     raise ValueError(
         "Could not find the Scores & Fixtures table with xG columns. "
         "FBref may have changed their page layout — inspect the tables "
