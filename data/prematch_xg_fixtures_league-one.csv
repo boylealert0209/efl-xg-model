@@ -1,6 +1,6 @@
 date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
-2026-11-14,AFC Wimbledon,Blackpool,1.406,1.406,2.812,True,0.366,0.269,0.366
-2026-11-14,Milton Keynes Dons,Burton,1.927,1.052,2.979,True,0.567,0.24,0.192
-2026-11-14,Sheffield Weds,Plymouth,1.648,1.457,3.105,True,0.41,0.263,0.327
-2026-11-14,Stockport,Reading,1.839,1.193,3.032,True,0.515,0.249,0.236
-2026-11-14,Wigan,Barnsley,1.637,1.467,3.104,True,0.406,0.261,0.332
+2026-11-24,Blackpool,Leicester,1.214,2.065,3.279,True,0.207,0.233,0.559
+2026-11-24,Bradford,Barnsley,2.148,1.132,3.279,True,0.595,0.228,0.178
+2026-11-24,Bromley,Wycombe,1.116,1.846,2.963,True,0.215,0.252,0.533
+2026-11-24,Stevenage,Sheffield Weds,1.378,1.378,2.756,True,0.364,0.273,0.364
+2026-11-26,Doncaster,Huddersfield,1.166,1.951,3.117,True,0.209,0.247,0.544
