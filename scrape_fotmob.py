@@ -77,17 +77,27 @@ REQUEST_DELAY_SECONDS = 3
 def fetch_next_data(url: str) -> dict:
     """Fetch a FotMob page and extract the embedded __NEXT_DATA__ JSON blob."""
     resp = requests.get(url, headers=HEADERS, timeout=30)
+
+    # Debug output: shows up in the GitHub Actions log
+    print("STATUS:", resp.status_code)
+    print("FINAL URL:", resp.url)
+    print("LENGTH:", len(resp.text))
+
     resp.raise_for_status()
+
+    # Looser pattern: matches any <script> tag with id="__NEXT_DATA__",
+    # regardless of other attributes or their order
     match = re.search(
-        r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+        r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>',
         resp.text, re.DOTALL
     )
     if not match:
+        print("SCRIPT TAGS:", re.findall(r"<script[^>]*>", resp.text)[:15])
+        print("BODY START:", resp.text[:500])
         raise ValueError(
             f"Could not find __NEXT_DATA__ block on {url}. "
             f"FotMob may have changed their page structure, or this "
-            f"request was blocked/redirected (check resp.status_code "
-            f"and resp.text manually if this keeps happening)."
+            f"request was blocked/redirected."
         )
     return json.loads(match.group(1))
 
