@@ -1,1 +1,13 @@
 date,home_team,away_team,xg_pre_market_home,xg_pre_market_away,xg_pre_market_total,used_ou_line,market_p_home_win,market_p_draw,market_p_away_win
+2026-11-24,Bristol City,Wrexham,1.304,1.134,2.438,True,0.394,0.293,0.313
+2026-11-24,Cardiff,Preston,2.316,1.087,3.403,True,0.639,0.21,0.151
+2026-11-24,Charlton,Lincoln,1.234,1.266,2.5,True,0.344,0.296,0.36
+2026-11-24,Middlesbrough,Swansea,2.231,1.0,3.231,True,0.642,0.215,0.143
+2026-11-24,Norwich,QPR,1.744,1.241,2.985,True,0.48,0.26,0.26
+2026-11-24,Portsmouth,West Ham,1.092,1.713,2.805,True,0.233,0.259,0.509
+2026-11-24,Sheffield United,Southampton,1.466,1.466,2.933,True,0.362,0.277,0.362
+2026-11-24,Wolves,Derby,2.246,0.718,2.964,True,0.712,0.195,0.093
+2026-11-25,Bolton,West Brom,1.196,1.714,2.91,True,0.255,0.262,0.483
+2026-11-25,Burnley,Birmingham,1.427,1.451,2.878,True,0.357,0.276,0.368
+2026-11-25,Watford,Blackburn,1.398,1.337,2.735,True,0.376,0.276,0.348
+2026-11-25,Stoke,Millwall,1.453,1.157,2.61,True,0.427,0.284,0.289
